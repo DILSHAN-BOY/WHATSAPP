@@ -12,5 +12,6 @@ BOT_NAME: process.env.BOT_NAME || "🍀𝐀𝐆𝐍𝐈🍀",
 OWNER_NAME: process.env.OWNER_NAME || "𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧",
 MODE: process.env.MODE || "public",
 PREFIX: process.env.PREFIX || ".",
-version: process.env.version || "1.0.0"
+version: process.env.version || "1.0.0",
+MONGODB: process.env.MONGODB || "mongodb://mongo:FbAOzhLzBjBIoyVZegPugoscYfHbHsef@hopper.proxy.rlwy.net:35489"
 };
