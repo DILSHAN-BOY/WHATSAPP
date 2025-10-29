@@ -2,7 +2,7 @@ const { cmd, commands } = require('../command');
 const yts = require('yt-search');
 const { fetchJson } = require('../lib/functions');
 const ddownr = require('denethdev-ytmp3');
-const config = require('../config');
+const {readEnv} = require('./lib/database');
 // Function to extract the video ID from youtu.be or YouTube links
 function extractYouTubeId(url) {
     const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -20,7 +20,7 @@ function convertYouTubeLink(q) {
 }
 
 cmd({
-    pattern: "song",
+    pattern: "song2",
     alias: "yt",
     desc: "To download songs.",
     react: "🎵",
@@ -29,6 +29,7 @@ cmd({
 },
 async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
     try {
+        const config = await readEnv();
         q = convertYouTubeLink(q);
         if (!q) return reply("*`Need YT_URL or Title`*");
         const search = await yts(q);
