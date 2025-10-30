@@ -1,9 +1,9 @@
 const { cmd } = require('../command');
 const os = require('os');
 const { runtime } = require('../lib/functions');
-const config = require('../config');
+const {readEnv} = require('./lib/mongodb');
 
-lite({
+cmd({
     pattern: "agni",
     alias: ["a", "online", "AGNI"],
     desc: "Check if bot is alive and running",
@@ -21,7 +21,6 @@ lite({
 ┃ 🟢 *Bot is Active & Online!*
 ┃
 ┃ 👑 *Owner:* ${config.OWNER_NAME}
-┃ 🔖 *Version:* ${config.version}
 ┃ 🛠️ *Prefix:* [ ${config.PREFIX} ]
 ┃ ⚙️ *Mode:* [ ${config.MODE} ]
 ┃ 💾 *RAM:* ${heapUsed}MB / ${totalMem}MB
