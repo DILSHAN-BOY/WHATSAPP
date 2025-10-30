@@ -228,8 +228,7 @@ command.function(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGr
 }});
 //============================================================================
 
-})
-}
+});
 app.get("/", (req, res) => {
 res.send("hey, bot started✅");
 });
