@@ -3,7 +3,7 @@ const fg = require('api-dylux')
 const yts = require('yt-search')
 
 cmd({
-    pattern: "song2",
+    pattern: "song",
     desc: "Check bot online or no.",
     react: "🍀",
     category: "download",
