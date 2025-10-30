@@ -17,7 +17,7 @@ const search = await yts(q)
 const data = search.videos[0];
 const url = data.url
 
-let desc = '
+let desc = `
 「🐉𝐀𝐔𝐃𝐈𝐎🐉」
 ┃ 👨‍💻Owner: SHASHIKA DILSHAN
 ┃ 🤖 Bot Name: AGNI
@@ -37,7 +37,7 @@ let desc = '
 ┃◈┃•3 |  𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚
 ┃◈└───────────┈⊷
 ╰──────────────┈⊷ 
-'
+`
 
 
 const sentMsg = await conn.sendMessage(from, {image: { url: data.thumbnail}, caption: desc},{quoted:mek});
