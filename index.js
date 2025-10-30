@@ -227,13 +227,12 @@ mek.type === "stickerMessage"
 command.function(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
 }});
 //============================================================================
-
-});
 app.get("/", (req, res) => {
-res.send("hey, bot started✅");
+  res.send("hey, bot started✅");
 });
-app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`);
+
+app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
+
 setTimeout(() => {
-connectToWA()
+  connectToWA();
 }, 4000);
-    
