@@ -1,7 +1,7 @@
 const { cmd } = require('../command');
 const os = require('os');
 const { runtime } = require('../lib/functions');
-const {readEnv} = require('./lib/mongodb');
+const {readEnv} = require('./lib/database');
 
 cmd({
     pattern: "agni",
