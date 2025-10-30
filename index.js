@@ -195,16 +195,15 @@ if(!isOwner && config.MODE === "private") return
 if(!isOwner && isGroup && config.MODE === "inbox") return
 if(!isOwner && !isGroup && config.MODE === "groups") return
 //=============================================================================================================
-const events = require('./command');
+
+const events = require('./command')
+
 const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
 
 if (isCmd) {
-  const cmd =
-    events.commands.find((cmd) => cmd.pattern === cmdName) ||
-    events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName));
-
+  const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
   if (cmd) {
-    if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key } });
+    if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key } })
 
     try {
       cmd.function(conn, mek, m, {
@@ -244,9 +243,7 @@ events.commands.map(async (command) => {
       pushname, isMe, isOwner, groupMetadata, groupName,
       participants, groupAdmins, isBotAdmins, isAdmins, reply
     });
-  } else if (
-    command.on === "message"
-  ) {
+  } else if (command.on === "message") {
     command.function(conn, mek, m, {
       from, quoted, body, isCmd, command, args, q,
       isGroup, sender, senderNumber, botNumber2, botNumber,
@@ -264,7 +261,7 @@ events.commands.map(async (command) => {
       participants, groupAdmins, isBotAdmins, isAdmins, reply
     });
   }
-});
+}); // 👈 මේක අනිවාර්යයෙන් අවසන් කරන්න
 
 //============================================================================
 app.get("/", (req, res) => {
