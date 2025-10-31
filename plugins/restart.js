@@ -11,6 +11,7 @@ cmd({
 },
 async(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
 try{
+    const config = await readEnv();
 const {exec} = require("child_process")
 reply("restarting...")
 await sleep(1500)
