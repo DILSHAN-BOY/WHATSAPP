@@ -2,7 +2,7 @@ const { cmd, commands } = require('../command');
 const yts = require('yt-search');
 const { fetchJson } = require('../lib/functions');
 const ddownr = require('denethdev-ytmp3');
-const {readEnv} = require('./lib/database');
+const {readEnv} = require('../lib/database');
 // Function to extract the video ID from youtu.be or YouTube links
 function extractYouTubeId(url) {
     const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
