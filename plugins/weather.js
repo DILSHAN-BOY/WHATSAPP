@@ -12,6 +12,7 @@ cmd({
 },
 async (conn, mek, m, { from, q, reply }) => {
     try {
+        const config = await readEnv();
         if (!q) return reply("❗ Please provide a city name. Usage: .weather [city name]");
         const apiKey = '2d61a72574c11c4f36173b627f8cb177'; 
         const city = q;
