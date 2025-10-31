@@ -1,7 +1,7 @@
 
 
 const { cmd } = require('../command');
-const config = require('../config');
+const {readEnv} = require('../lib/database');
 
 cmd({
     pattern: "settings",
