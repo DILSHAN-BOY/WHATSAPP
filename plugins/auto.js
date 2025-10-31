@@ -1,7 +1,7 @@
 //𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧//
 const fs = require('fs');
 const path = require('path');
-const {readEnv} = require('./lib/database')
+const {readEnv} = require('../lib/database')
 const {cmd , commands} = require('../command')
 
 //auto_voice
