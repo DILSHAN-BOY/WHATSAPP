@@ -35,6 +35,7 @@ cmd({
     reply
 }) => {
     try {
+        const config = await readEnv();
         // Function to return ✅ or ❌ based on the boolean value, considering multiple formats
         const statusIcon = (status) => {
             return (status === true || status === 'true' || status === 1) ? "✅" : "❌";
