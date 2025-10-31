@@ -44,7 +44,7 @@ connectDB();
 //=============================================
 const {readEnv} = require('./lib/database')
 const config = await readEnv();
-const prifix = config.PRIFIX
+const prefix = config.PRIFIX
 //===================
 console.log("Connecting wa bot 🧬...");
 const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
