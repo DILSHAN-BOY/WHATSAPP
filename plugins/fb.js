@@ -13,6 +13,7 @@ cmd({
   filename: __filename
 }, async (conn, m, store, { from, q, reply }) => {
   try {
+    const config = await readEnv();
     if (!q || !q.startsWith("https://")) {
       return reply("*`Need a valid Facebook URL!`*");
     }
