@@ -1,5 +1,5 @@
 const l = console.log
-const config = require('../config')
+const {readEnv} = require('../lib/database')
 const { cmd, commands } = require('../command')
 const axios = require("axios");
 const path = require("path");
