@@ -1,100 +1,45 @@
-/*created by shashika DILSHAN*/
-const {readEnv} = require('../lib/database')
-const {cmd , commands} = require('../command')
+const { readEnv } = require('../lib/database');
+const { cmd, commands } = require('../command');
+
 cmd({
     pattern: "menu",
     react: "👾",
     desc: "get cmd list",
     category: "main",
     filename: __filename
-},
-async(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
-try{
-const config = await readEnv();
-let menu = {
-main: '',
-download: '',
-group: '',
-owner: '',
-convert: '',
-search: ''
-};
+}, async (conn, mek, m, { from, pushname }) => {
+    try {
+        const config = await readEnv();
 
-for (let i = 0; i < commands.length; i++) {
-if (commands[i].pattern && !commands[i].dontAddCommandList) {
-menu[commands[i].category] += `*┋* ${commands[i].pattern}\n`;
- }
-}
+        const reply = (text) => conn.sendMessage(from, { text }, { quoted: mek });
 
-let madeMenu = `*╭─────────────────❒⁠⁠⁠⁠*
+        let menu = { main: '', download: '', group: '', owner: '', convert: '', search: '' };
 
-*⇆ ʜɪ ᴍʏ ᴅᴇᴀʀ ғʀɪᴇɴᴅ ⇆*
+        for (let i = 0; i < commands.length; i++) {
+            const cat = commands[i].category || 'main';
+            if (commands[i].pattern && !commands[i].dontAddCommandList) {
+                if (!menu[cat]) menu[cat] = '';
+                menu[cat] += `*┋* ${commands[i].pattern}\n`;
+            }
+        }
 
-     *${pushname}*
+        let madeMenu = `*╭─ AGNI MENU ─╮*\n*Hi ${pushname}*\n\n` +
+            `*╭─ DOWNLOAD CMDS ─╮*\n${menu.download}*╰─────────*\n` +
+            `*╭─ MAIN CMDS ─╮*\n${menu.main}*╰─────────*\n` +
+            `*╭─ GROUP CMDS ─╮*\n${menu.group}*╰─────────*\n` +
+            `*╭─ OWNER CMDS ─╮*\n${menu.owner}*╰─────────*\n` +
+            `*╭─ CONVERT CMDS ─╮*\n${menu.convert}*╰─────────*\n` +
+            `*╭─ SEARCH CMDS ─╮*\n${menu.search}*╰─────────*\n` +
+            `> Powered by AGNI`;
 
-┏━━━━━━━━━━━━━━━━━━━━
-   *🍀Welcome to 𝐀𝐆𝐍𝐈 Menu🍀*
-┗━━━━━━━━━━━━━━━━━━━━
+        if (config.MENU_IMG) {
+            await conn.sendMessage(from, { image: { url: config.MENU_IMG }, caption: madeMenu }, { quoted: mek });
+        } else {
+            reply(madeMenu);
+        }
 
-*𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧*
-
-
-*╭───────────────❒⁠⁠⁠⁠*
-*│* *❂ DOWNLOAD CMDS❂*
-*┕───────────────❒*
-*╭──────────●●►*
-${menu.download}
-*╰──────────●●►*
-
-*╭───────────────❒⁠⁠⁠⁠*
-*│* *❂MAIN CMDS❂*
-*┕───────────────❒*
-*╭──────────●●►*
-${menu.main}
-*╰──────────●●►*
-
-*╭───────────────❒⁠⁠⁠⁠*
-*│* *❂GROUP CMDS❂*
-*┕───────────────❒*
-
-*╭──────────●●►*
-${menu.group}
-*╰──────────●●►*
-
-*╭───────────────❒⁠⁠⁠⁠*
-*│* *❂OWNER CMDS❂*
-*┕───────────────❒*
-
-*╭──────────●●►*
-${menu.owner}
-*╰──────────●●►*
-
-*╭───────────────❒⁠⁠⁠⁠*
-*│* *❂CONVERTER CMDS❂*
-*┕───────────────❒*
-
-*╭──────────●●►*
-${menu.convert}
-*╰──────────●●►*
-
-*╭─────────────────❒⁠⁠⁠⁠*
-*│* *❂SEARCH CMDS ❂*
-*┕─────────────────❒*
-
-*╭──────────●●►*
-${menu.search}
-*╰──────────●●►*
-
-
-> *Powered by agni*
-
-`;
-
-await conn.sendMessage(from,{image:{url:config.MENU_IMG},caption:madeMenu},{quoted:mek})
-
-}catch(e){
-console.log(e)
-reply(`${e}`)
-}
-})
-                    
+    } catch (e) {
+        console.error(e);
+        conn.sendMessage(from, { text: `Error: ${e.message}` }, { quoted: mek });
+    }
+});
