@@ -12,6 +12,7 @@ cmd({
     filename: __filename
 }, async (conn, mek, m, { from, sender, reply }) => {
     try {
+        const config = await readEnv();
         const heapUsed = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
         const totalMem = (os.totalmem() / 1024 / 1024).toFixed(2);
         const uptime = runtime(process.uptime());
