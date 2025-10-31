@@ -1,102 +1,109 @@
-const { cmd, commands } = require("../command");
-const config = require('../config');
 
-cmd(
-  {
+
+const fs = require('fs');
+const {readEnv} = require('../lib/database');
+const { cmd, commands } = require('../command');
+const axios = require('axios');
+
+cmd({
     pattern: "menu",
-    alise: ["list"],
-    desc: "get cmd list",
+    react: "🤖",
+    alias: ["allmenu"],
+    desc: "Get command list",
     category: "main",
-    filename: __filename,
-  },
-  async (
-    robin,
-    mek,
-    m,
-    {
-      from,
-      quoted,
-      body,
-      isCmd,
-      command,
-      args,
-      q,
-      isGroup,
-      sender,
-      senderNumber,
-      botNumber2,
-      botNumber,
-      pushname,
-      isMe,
-      isOwner,
-      groupMetadata,
-      groupName,
-      participants,
-      groupAdmins,
-      isBotAdmins,
-      isAdmins,
-      reply,
-    }
-  ) => {
+    filename: __filename
+},
+async (conn, mek, m, {
+    from, quoted, pushname, reply
+}) => {
     try {
-      let menu = {
-        main: "",
-        download: "",
-        group: "",
-        owner: "",
-        convert: "",
-        search: "",
-      };
+      const config = await readEnv();
+        let menu = {
+            download: '', group: '', search: '', owner: '',
+            ai: '', anime: '', convert: '', logo: '',
+            main: '', other: ''
+        };
 
-      for (let i = 0; i < commands.length; i++) {
-        if (commands[i].pattern && !commands[i].dontAddCommandList) {
-          menu[commands[i].category] += `${config.PREFIX}${commands[i].pattern}\n`;
+        for (let i = 0; i < commands.length; i++) {
+            let cmd = commands[i];
+            if (cmd.pattern && !cmd.dontAddCommandList && menu.hasOwnProperty(cmd.category)) {
+                menu[cmd.category] += `│ ⬡ ${cmd.pattern}\n`;
+            }
         }
-      }
 
-      let madeMenu = `🤗 *HelloW  ${pushname}*
+      let madeMenu = `𝐘𝐨𝐨  ${user}
+*Wᴇʟᴄᴏᴍᴇ Tᴏ ΛGПI* 
 
-> *Welcom To ${config.BOT_NAME} 🎗️*
+╭─「 🛠️ 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧 」 
+│🤖 *Bot*: 𝐀𝐆𝐍𝐈
+│🙋‍♂️ *User*: ${user}
+│📱 *Owner*: ${owner}
+│⏳ *Uptime*: ${uptime}
+│💾 *Ram*: ${usedRam} / ${totalRam}
+│🛎️ *Prefix*: ${config.PREFIX}
+╰──────────●●►
 
+╭─「 ⚛𝐀𝐆𝐍𝐈⚛ MENU━━𖣔 」 
+│ ⚙️ 《《⚛*MAIN COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.main || '│ (No commands found)'}
+│ 🍂 《《⚛*GROUP COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.group || ''}
+│ 《《⚛*OTHER COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.other || ''}
+│ 🍃 《《⚛*DOWNLOAD COMMANDS*⚛》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.download || '│ (No commands found)'}
+│ 🌱 《《⚛*OWNER COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.owner || '│ (No commands found)'}
+│ 🌵 《《⚛*CONVERT COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+│ 🌿 《《⚛*AI COMMANDS*⚛》》
+${menu.ai || '│ (No commands found)'}
+┗━━━━━━━━━━━━━━━𖣔
+${menu.convert || '│ (No commands found)'}
+│ 🍁 《《⚛*LOGO/ANIME COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.logo || '│ (No commands found)'}
+${menu.anime || '│ (No commands found)'}
+│ ♻️《《⚛*SEARCH COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.search || '│ (No commands found)'}
+╰──────────●●►
 
-*MAIN MENU COMMANDS🔰*
+> *POWERED BY 𝐀𝐆𝐍𝐈*
+`;
 
-${menu.main}
+        await conn.sendMessage(
+            from,
+            {
+                image: { url: config.MENU_IMAGE_URL },
+                caption: madeMenu,
+                contextInfo: {
+                    mentionedJid: [m.sender],
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: '120363402507750390@newsletter',
+                        newsletterName: 'Lite XD',
+                        serverMessageId: 143
+                    }
+                }
+            },
+            { quoted: mek }
+        );
 
-*DOWNLOAD COMMANDS🍃*
+        await conn.sendMessage(from, {
+            audio: fs.readFileSync('./all/menu.m4a'),
+            mimetype: 'audio/mp4',
+            ptt: true
+        }, { quoted: mek });
 
-${menu.download} 
-
-*GROUP COMMANDS 👥*
-   
-${menu.group}
-
-*CONVERT COMMANDS 🪀*
-
-${menu.convert}
-
-${config.FOOTER}`;
-
-      await robin.sendPresenceUpdate('recording', from);
-
-      await robin.sendMessage(
-        from,
-        { audio: { url: "https://files.catbox.moe/x1tr4y.mp3" }, mimetype: 'audio/mpeg', ptt: true },
-        { quoted: mek }
-      );
-
-      await robin.sendMessage(
-        from,
-        {
-          image: { url: config.MENU_IMG },
-          caption: madeMenu
-        },
-        { quoted: mek }
-      );
     } catch (e) {
-      console.log(e);
-      reply(`${e}`);
+        console.error(e);
+        reply(`${e}`);
     }
-  }
-);
-              
+});
