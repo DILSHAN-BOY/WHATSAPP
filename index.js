@@ -21,6 +21,10 @@ const { File } = require('megajs')
 
 const ownerNumber = ['94772469026']
 
+// ✅ Connect MongoDB before anything else
+const connectDB = require('./lib/mongodb');
+connectDB();
+
 //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
 if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
@@ -36,17 +40,13 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
 
-//=============================================
-
+//=================== MAIN CONNECT FUNCTION =============================
 async function connectToWA() {
-//============mongodb=======================
-const connectDB = require('./lib/mongodb')
-connectDB();
-//=============================================
-const {readEnv} = require('./lib/database')
-const config = await readEnv();
-const prefix = config.PRIFIX
-//===================
+  // ✅ Load dynamic ENV variables from MongoDB
+  const { readEnv } = require('./lib/database');
+  const dbConfig = await readEnv();
+  const prefix = dbConfig.PREFIX || '.';
+        
 console.log("Connecting wa bot 🧬...");
 const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
 var { version } = await fetchLatestBaileysVersion()
