@@ -141,10 +141,10 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
               }
             }
 
-if(senderNumber.includes("94772469026")){
-if(isReact) return
-m.react("😊")
-}
+//if(senderNumber.includes("94772469026")){
+//if(isReact) return
+//m.react("😊")
+//}
 
 if(senderNumber.includes("94705104830")){
 if(isReact) return
