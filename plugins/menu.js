@@ -18,6 +18,8 @@ async (conn, mek, m, { from, quoted, pushname, reply }) => {
     const owner = config.OWNER_NAME || "Shashika Dilshan";
     const botName = config.BOT_NAME || "AGNI";
     const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";
+    const menuVid = config.MENU_VIDEO_URL || "https://files.catbox.moe/hv5i0u.mp4"; // <-- Add video link here
+    const menuAudio = config.MENU_AUDIO_URL || "https://files.catbox.moe/f4ohfr.mp3"; // <-- Add audio link here
 
     //=== System Stats ===//
     const user = pushname || m.sender.split('@')[0];
@@ -79,9 +81,20 @@ ${menu.other || ''}
 > *Developed by ${owner}*
 `;
 
+    //=== Send Round Video (like profile video) ===//
     await conn.sendMessage(from, {
-      image: { url: menuImg },
-      caption
+      video: { url: menuVid },
+      caption,
+      gifPlayback: true, // makes it loop like a GIF
+      mimetype: 'video/mp4',
+      fileName: `${botName}_Menu.mp4`
+    }, { quoted: mek });
+
+    //=== Send Menu Audio ===//
+    await conn.sendMessage(from, {
+      audio: { url: menuAudio },
+      mimetype: 'audio/mp4',
+      ptt: true // makes it play like a voice note
     }, { quoted: mek });
 
   } catch (err) {
@@ -89,3 +102,93 @@ ${menu.other || ''}
     reply("❌ Menu Error: " + err.message);
   }
 });
+
+// ============================================
+// INTERACTIVE MENU (.menu2)
+// ============================================
+
+let menuCache = {}; // Temporary state store
+
+cmd({
+  pattern: "menu2",
+  react: "🧭",
+  desc: "Interactive category menu",
+  category: "main",
+  filename: __filename
+},
+async (conn, mek, m, { from, reply, sender }) => {
+  try {
+    const config = await readEnv();
+    const botName = config.BOT_NAME || "AGNI-MD";
+
+    const categories = [
+      "👥 Group Commands",
+      "📥 Download Commands",
+      "🤖 AI Commands",
+      "⚙️ Convert Commands",
+      "👑 Owner Commands",
+      "🎨 Logo / Anime",
+      "🔍 Search Commands",
+      "⚡ Other Commands"
+    ];
+
+    let menuText = `╭───💫 *${botName} MENU* 💫───╮\n`;
+    menuText += `│ 🧭 *Choose a Category:*\n│\n`;
+    categories.forEach((cat, i) => {
+      menuText += `│ ${i + 1}. ${cat}\n`;
+    });
+    menuText += `╰────────────────────────────╯\n\n_Reply with a number (1-8)_`;
+
+    await reply(menuText);
+    menuCache[sender] = { step: "choose", prefix: config.PREFIX || "." };
+
+  } catch (err) {
+    console.log(err);
+    reply("❌ Error showing menu2: " + err.message);
+  }
+});
+
+cmd({ on: "message" }, async (conn, mek, m, { from, body, sender, reply }) => {
+  try {
+    if (!menuCache[sender]) return;
+    const userState = menuCache[sender];
+    if (userState.step !== "choose") return;
+
+    const choice = parseInt(body.trim());
+    if (isNaN(choice) || choice < 1 || choice > 8) {
+      return reply("⚠️ Invalid choice! Please reply with a number (1-8).");
+    }
+
+    const categoryMap = {
+      1: "group",
+      2: "download",
+      3: "ai",
+      4: "convert",
+      5: "owner",
+      6: "logo",
+      7: "search",
+      8: "other"
+    };
+
+    const selectedCategory = categoryMap[choice];
+    const selectedCommands = commands.filter(c => c.category === selectedCategory && c.pattern);
+
+    let menuList = `╭───📜 *${selectedCategory.toUpperCase()} COMMANDS* 📜───╮\n`;
+    if (selectedCommands.length === 0) {
+      menuList += "│ (No commands found)\n";
+    } else {
+      selectedCommands.forEach((cmdObj, i) => {
+        menuList += `│ ${i + 1}. ⚡ ${userState.prefix}${cmdObj.pattern}  —  ${cmdObj.desc || ''}\n`;
+      });
+    }
+    menuList += `╰────────────────────────────╯`;
+
+    await reply(menuList);
+    delete menuCache[sender];
+
+  } catch (err) {
+    console.error(err);
+    reply("❌ Menu2 Error: " + err.message);
+  }
+});
+      
