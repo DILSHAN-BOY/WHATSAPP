@@ -2,6 +2,9 @@ const fs = require('fs');
 const { readEnv } = require('../lib/database');
 const { cmd, commands } = require('../command');
 
+// ============================================
+// MENU (.menu) — Video + Voice Note
+// ============================================
 cmd({
   pattern: "menu",
   react: "🔥",
@@ -9,39 +12,37 @@ cmd({
   desc: "Show command menu",
   category: "main",
   filename: __filename
-},
-async (conn, mek, m, { from, quoted, pushname, reply }) => {
+}, async (conn, mek, m, { from, quoted, pushname, reply }) => {
   try {
-    //=== Load dynamic config from MongoDB ===//
     const config = await readEnv();
     const prefix = config.PREFIX || ".";
     const owner = config.OWNER_NAME || "Shashika Dilshan";
     const botName = config.BOT_NAME || "AGNI";
-    const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";
-    const menuVid = config.MENU_VIDEO_URL || "https://github.com/DILSHAN-BOY/WHATSAPP/raw/refs/heads/main/SHASHIKA/AQMSDoMLrj6KuHS9MwQXwiIgQvnWx6EewRF81F5i3LvjeTBdxUBSWZ2pmnQtyED6bPWN50YhHx5OPuDKJPuA86Xz.mp4"; // <-- Add video link here
-    const menuAudio = config.MENU_AUDIO_URL || "https://github.com/DILSHAN-BOY/WHATSAPP/raw/refs/heads/main/SHASHIKA/FDownload.app-4023306571314450-(320kbps).mp3"; // <-- Add audio link here
+    const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";  
+    const menuVid = config.MENU_VIDEO_URL || "https://files.catbox.moe/kjlx3l.mp4";
+    const menuAudio = config.MENU_AUDIO_URL || "https://files.catbox.moe/sp4tb9.ogg";
 
-    //=== System Stats ===//
-    const user = pushname || m.sender.split('@')[0];
-    const uptime = new Date(process.uptime() * 1000).toISOString().substr(11, 8);
-    const usedRam = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
-    const totalRam = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(1);
+    //=== System Stats ===//  
+    const user = pushname || m.sender.split('@')[0];  
+    const uptime = new Date(process.uptime() * 1000).toISOString().substr(11, 8);  
+    const usedRam = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);  
+    const totalRam = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(1);  
+  
+    //=== Menu Categories ===//  
+    let menu = {  
+      main: '', group: '', owner: '', ai: '',  
+      download: '', search: '', convert: '',  
+      logo: '', anime: '', other: ''  
+    };  
+  
+    //=== Auto add commands by category ===//  
+    for (let c of commands) {  
+      if (c.pattern && !c.dontAddCommandList && menu.hasOwnProperty(c.category)) {  
+        menu[c.category] += `│ ⬡ ${prefix}${c.pattern}\n`;  
+      }  
+    }  
 
-    //=== Menu Categories ===//
-    let menu = {
-      main: '', group: '', owner: '', ai: '',
-      download: '', search: '', convert: '',
-      logo: '', anime: '', other: ''
-    };
-
-    //=== Auto add commands by category ===//
-    for (let c of commands) {
-      if (c.pattern && !c.dontAddCommandList && menu.hasOwnProperty(c.category)) {
-        menu[c.category] += `│ ⬡ ${prefix}${c.pattern}\n`;
-      }
-    }
-
-    //=== Menu Message ===//
+    
     let caption = `𝐘𝐨𝐨  ${user}
 *Wᴇʟᴄᴏᴍᴇ Tᴏ ΛGПI* 
 
@@ -89,20 +90,21 @@ ${menu.search || '│ (No commands found)'}
 > *Developed by ${owner}*
 `;
 
-    //=== Send Round Video (like profile video) ===//
+    await conn.sendMessage(from, { image: { url: menuImg }, caption: desc }, { quoted: mek });
+    // Send video first (rounded corners, normal playback)
     await conn.sendMessage(from, {
       video: { url: menuVid },
       caption,
-      gifPlayback: true, // makes it loop like a GIF
       mimetype: 'video/mp4',
-      fileName: `${botName}_Menu.mp4`
+      fileName: `${botName}_Menu.mp4`,
+      gifPlayback: false
     }, { quoted: mek });
 
-    //=== Send Menu Audio ===//
+    // Send voice note separately
     await conn.sendMessage(from, {
       audio: { url: menuAudio },
-      mimetype: 'audio/mp4',
-      ptt: true // makes it play like a voice note
+      mimetype: 'audio/ogg',
+      ptt: true
     }, { quoted: mek });
 
   } catch (err) {
@@ -114,8 +116,7 @@ ${menu.search || '│ (No commands found)'}
 // ============================================
 // INTERACTIVE MENU (.menu2)
 // ============================================
-
-let menuCache = {}; // Temporary state store
+let menuCache = {};
 
 cmd({
   pattern: "menu2",
@@ -123,11 +124,10 @@ cmd({
   desc: "Interactive category menu",
   category: "main",
   filename: __filename
-},
-async (conn, mek, m, { from, reply, sender }) => {
+}, async (conn, mek, m, { from, reply, sender }) => {
   try {
     const config = await readEnv();
-    const botName = config.BOT_NAME || "AGNI-MD";
+    const botName = config.BOT_NAME || "AGNI";
 
     const categories = [
       "👥 Group Commands",
@@ -164,7 +164,7 @@ cmd({ on: "message" }, async (conn, mek, m, { from, body, sender, reply }) => {
 
     const choice = parseInt(body.trim());
     if (isNaN(choice) || choice < 1 || choice > 8) {
-      return reply("⚠️ Invalid choice! Please reply with a number (1-8).");
+      return reply("⚠️ Invalid choice! Reply with number 1-8.");
     }
 
     const categoryMap = {
@@ -182,13 +182,10 @@ cmd({ on: "message" }, async (conn, mek, m, { from, body, sender, reply }) => {
     const selectedCommands = commands.filter(c => c.category === selectedCategory && c.pattern);
 
     let menuList = `╭───📜 *${selectedCategory.toUpperCase()} COMMANDS* 📜───╮\n`;
-    if (selectedCommands.length === 0) {
-      menuList += "│ (No commands found)\n";
-    } else {
-      selectedCommands.forEach((cmdObj, i) => {
-        menuList += `│ ${i + 1}. ⚡ ${userState.prefix}${cmdObj.pattern}  —  ${cmdObj.desc || ''}\n`;
-      });
-    }
+    if (selectedCommands.length === 0) menuList += "│ (No commands found)\n";
+    else selectedCommands.forEach((cmdObj, i) => {
+      menuList += `│ ${i + 1}. ⚡ ${userState.prefix}${cmdObj.pattern} — ${cmdObj.desc || ''}\n`;
+    });
     menuList += `╰────────────────────────────╯`;
 
     await reply(menuList);
@@ -199,4 +196,3 @@ cmd({ on: "message" }, async (conn, mek, m, { from, body, sender, reply }) => {
     reply("❌ Menu2 Error: " + err.message);
   }
 });
-      
