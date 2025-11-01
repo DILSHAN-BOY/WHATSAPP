@@ -1,37 +1,37 @@
-
-
 const fs = require('fs');
-const {readEnv} = require('../lib/database');
+const { readEnv } = require('../lib/database');
 const { cmd, commands } = require('../command');
-const axios = require('axios');
 
 cmd({
-    pattern: "menu",
-    react: "🤖",
-    alias: ["allmenu"],
-    desc: "Get command list",
-    category: "main",
-    filename: __filename
+  pattern: "menu",
+  react: "🤖",
+  alias: ["allmenu"],
+  desc: "Get command list",
+  category: "main",
+  filename: __filename
 },
-async (conn, mek, m, {
-    from, quoted, pushname, reply
-}) => {
-    try {
-      const config = await readEnv();
-        let menu = {
-            download: '', group: '', search: '', owner: '',
-            ai: '', anime: '', convert: '', logo: '',
-            main: '', other: ''
-        };
+async (conn, mek, m, { from, quoted, pushname, reply }) => {
+  try {
+    const config = await readEnv();
+    let user = pushname || m.sender.split('@')[0];
+    let owner = config.OWNER_NAME || "Shashika";
+    let uptime = Math.floor(process.uptime()) + "s";
+    let usedRam = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2) + " MB";
+    let totalRam = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2) + " MB";
 
-        for (let i = 0; i < commands.length; i++) {
-            let cmd = commands[i];
-            if (cmd.pattern && !cmd.dontAddCommandList && menu.hasOwnProperty(cmd.category)) {
-                menu[cmd.category] += `│ ⬡ ${cmd.pattern}\n`;
-            }
-        }
+    let menu = {
+      download: '', group: '', search: '', owner: '',
+      ai: '', anime: '', convert: '', logo: '',
+      main: '', other: ''
+    };
 
-      let madeMenu = `𝐘𝐨𝐨  ${user}
+    for (let cmdItem of commands) {
+      if (cmdItem.pattern && !cmdItem.dontAddCommandList && menu.hasOwnProperty(cmdItem.category)) {
+        menu[cmdItem.category] += `│ ⬡ ${cmdItem.pattern}\n`;
+      }
+    }
+
+    let madeMenu = `𝐘𝐨𝐨  ${user}
 *Wᴇʟᴄᴏᴍᴇ Tᴏ ΛGПI* 
 
 ╭─「 🛠️ 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧 」 
@@ -77,33 +77,13 @@ ${menu.search || '│ (No commands found)'}
 > *POWERED BY 𝐀𝐆𝐍𝐈*
 `;
 
-        await conn.sendMessage(
-            from,
-            {
-                image: { url: config.MENU_IMAGE_URL },
-                caption: madeMenu,
-                contextInfo: {
-                    mentionedJid: [m.sender],
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363402507750390@newsletter',
-                        newsletterName: 'Lite XD',
-                        serverMessageId: 143
-                    }
-                }
-            },
-            { quoted: mek }
-        );
+    await conn.sendMessage(from, {
+      image: { url: config.MENU_IMAGE_URL },
+      caption: madeMenu
+    }, { quoted: mek });
 
-        await conn.sendMessage(from, {
-            audio: fs.readFileSync('./all/menu.m4a'),
-            mimetype: 'audio/mp4',
-            ptt: true
-        }, { quoted: mek });
-
-    } catch (e) {
-        console.error(e);
-        reply(`${e}`);
-    }
+  } catch (e) {
+    console.error(e);
+    reply("❌ Menu error: " + e.message);
+  }
 });
