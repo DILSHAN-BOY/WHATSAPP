@@ -18,8 +18,8 @@ async (conn, mek, m, { from, quoted, pushname, reply }) => {
     const owner = config.OWNER_NAME || "Shashika Dilshan";
     const botName = config.BOT_NAME || "AGNI";
     const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";
-    const menuVid = config.MENU_VIDEO_URL || "https://files.catbox.moe/hv5i0u.mp4"; // <-- Add video link here
-    const menuAudio = config.MENU_AUDIO_URL || "https://files.catbox.moe/f4ohfr.mp3"; // <-- Add audio link here
+    const menuVid = config.MENU_VIDEO_URL || "https://github.com/DILSHAN-BOY/WHATSAPP/raw/refs/heads/main/SHASHIKA/AQMSDoMLrj6KuHS9MwQXwiIgQvnWx6EewRF81F5i3LvjeTBdxUBSWZ2pmnQtyED6bPWN50YhHx5OPuDKJPuA86Xz.mp4"; // <-- Add video link here
+    const menuAudio = config.MENU_AUDIO_URL || "https://github.com/DILSHAN-BOY/WHATSAPP/raw/refs/heads/main/SHASHIKA/FDownload.app-4023306571314450-(320kbps).mp3"; // <-- Add audio link here
 
     //=== System Stats ===//
     const user = pushname || m.sender.split('@')[0];
@@ -42,40 +42,48 @@ async (conn, mek, m, { from, quoted, pushname, reply }) => {
     }
 
     //=== Menu Message ===//
-    let caption = `
-👋 𝐇𝐞𝐲 ${user},
+    let caption = `𝐘𝐨𝐨  ${user}
+*Wᴇʟᴄᴏᴍᴇ Tᴏ ΛGПI* 
 
-*⚡ Welcome To ${botName} ⚡*
+╭─「 🛠️ 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧 」 
+│🤖 *Bot*: 𝐀𝐆𝐍𝐈
+│🙋‍♂️ *User*: ${user}
+│📱 *Owner*: ${owner}
+│⏳ *Uptime*: ${uptime}
+│💾 *Ram*: ${usedRam} / ${totalRam}
+│🛎️ *Prefix*: ${config.PREFIX}
+╰──────────●●►
 
-╭─「 🧠 System Info 」
-│🤖 *Bot* : ${botName}
-│👤 *Owner* : ${owner}
-│📱 *User* : ${user}
-│💻 *RAM* : ${usedRam} / ${totalRam} MB
-│⏱️ *Uptime* : ${uptime}
-│⌨️ *Prefix* : ${prefix}
-╰───────────────❖
-
-╭─「 ⚛ ${botName} Command Menu ⚛ 」
-│ ⚙️ *MAIN COMMANDS*
-${menu.main || '│ (none)'}
-│ 🧩 *GROUP COMMANDS*
-${menu.group || '│ (none)'}
-│ 🎧 *DOWNLOAD COMMANDS*
-${menu.download || '│ (none)'}
-│ 🤖 *AI COMMANDS*
-${menu.ai || '│ (none)'}
-│ 🧠 *CONVERT COMMANDS*
-${menu.convert || '│ (none)'}
-│ 🧑‍💻 *OWNER COMMANDS*
-${menu.owner || '│ (none)'}
-│ 🌸 *LOGO / ANIME*
-${menu.logo || ''}${menu.anime || ''}
-│ 🔍 *SEARCH COMMANDS*
-${menu.search || '│ (none)'}
-│ ⚡ *OTHER COMMANDS*
+╭─「 ⚛𝐀𝐆𝐍𝐈⚛ MENU━━𖣔 」 
+│ ⚙️ 《《⚛*MAIN COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.main || '│ (No commands found)'}
+│ 🍂 《《⚛*GROUP COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.group || ''}
+│ 《《⚛*OTHER COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
 ${menu.other || ''}
-╰────────────────❖
+│ 🍃 《《⚛*DOWNLOAD COMMANDS*⚛》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.download || '│ (No commands found)'}
+│ 🌱 《《⚛*OWNER COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.owner || '│ (No commands found)'}
+│ 🌵 《《⚛*CONVERT COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+│ 🌿 《《⚛*AI COMMANDS*⚛》》
+${menu.ai || '│ (No commands found)'}
+┗━━━━━━━━━━━━━━━𖣔
+${menu.convert || '│ (No commands found)'}
+│ 🍁 《《⚛*LOGO/ANIME COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.logo || '│ (No commands found)'}
+${menu.anime || '│ (No commands found)'}
+│ ♻️《《⚛*SEARCH COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.search || '│ (No commands found)'}
+╰──────────●●►
 
 > *Powered By ${botName}*
 > *Developed by ${owner}*
