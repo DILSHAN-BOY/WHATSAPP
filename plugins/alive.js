@@ -3,26 +3,24 @@ const { cmd } = require('../command');
 
 cmd({
   pattern: "alive",
-  desc: "Check bot online or no.",
+  desc: "Check bot online or not.",
   react: "🍀",
   category: "main",
   filename: __filename
 },
-async (conn, mek, m, { from, reply }) => {
+async (conn, mek, m, { from, quoted, reply }) => {
   try {
     const config = await readEnv();
-
-    // fallback values (avoid undefined errors)
-    const aliveImage = config.ALIVE_IMG || "https://files.catbox.moe/ue4ppc.jpg";
-    const aliveMsg = config.ALIVE_MSG || "✅ *Bot is online and working fine!*";
+    const aliveImg = config?.ALIVE_IMG || 'https://files.catbox.moe/ue4ppc.jpg';
+    const aliveMsg = config?.ALIVE_MSG || '⚡ Bot is Alive!';
 
     await conn.sendMessage(from, {
-      image: { url: aliveImage },
+      image: { url: aliveImg },
       caption: aliveMsg
     }, { quoted: mek });
 
   } catch (e) {
-    console.log("Alive Error =>", e);
-    reply("❌ Alive command error: " + e.message);
+    console.error('Alive command error:', e);
+    reply('❌ Alive command error:\n' + e.message);
   }
 });
