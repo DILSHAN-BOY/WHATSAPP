@@ -4,86 +4,88 @@ const { cmd, commands } = require('../command');
 
 cmd({
   pattern: "menu",
-  react: "🤖",
-  alias: ["allmenu"],
-  desc: "Get command list",
+  react: "🔥",
+  alias: ["allmenu", "help"],
+  desc: "Show command menu",
   category: "main",
   filename: __filename
 },
 async (conn, mek, m, { from, quoted, pushname, reply }) => {
   try {
+    //=== Load dynamic config from MongoDB ===//
     const config = await readEnv();
-    let user = pushname || m.sender.split('@')[0];
-    let owner = config.OWNER_NAME || "Shashika";
-    let uptime = Math.floor(process.uptime()) + "s";
-    let usedRam = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2) + " MB";
-    let totalRam = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2) + " MB";
+    const prefix = config.PREFIX || ".";
+    const owner = config.OWNER_NAME || "Shashika Dilshan";
+    const botName = config.BOT_NAME || "AGNI";
+    const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";
 
+    //=== System Stats ===//
+    const user = pushname || m.sender.split('@')[0];
+    const uptime = new Date(process.uptime() * 1000).toISOString().substr(11, 8);
+    const usedRam = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
+    const totalRam = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(1);
+
+    //=== Menu Categories ===//
     let menu = {
-      download: '', group: '', search: '', owner: '',
-      ai: '', anime: '', convert: '', logo: '',
-      main: '', other: ''
+      main: '', group: '', owner: '', ai: '',
+      download: '', search: '', convert: '',
+      logo: '', anime: '', other: ''
     };
 
-    for (let cmdItem of commands) {
-      if (cmdItem.pattern && !cmdItem.dontAddCommandList && menu.hasOwnProperty(cmdItem.category)) {
-        menu[cmdItem.category] += `│ ⬡ ${cmdItem.pattern}\n`;
+    //=== Auto add commands by category ===//
+    for (let c of commands) {
+      if (c.pattern && !c.dontAddCommandList && menu.hasOwnProperty(c.category)) {
+        menu[c.category] += `│ ⬡ ${prefix}${c.pattern}\n`;
       }
     }
 
-    let madeMenu = `𝐘𝐨𝐨  ${user}
-*Wᴇʟᴄᴏᴍᴇ Tᴏ ΛGПI* 
+    //=== Menu Message ===//
+    let caption = `
+👋 𝐇𝐞𝐲 ${user},
 
-╭─「 🛠️ 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧 」 
-│🤖 *Bot*: 𝐀𝐆𝐍𝐈
-│🙋‍♂️ *User*: ${user}
-│📱 *Owner*: ${owner}
-│⏳ *Uptime*: ${uptime}
-│💾 *Ram*: ${usedRam} / ${totalRam}
-│🛎️ *Prefix*: ${config.PREFIX}
-╰──────────●●►
+*⚡ Welcome To ${botName} ⚡*
 
-╭─「 ⚛𝐀𝐆𝐍𝐈⚛ MENU━━𖣔 」 
-│ ⚙️ 《《⚛*MAIN COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
-${menu.main || '│ (No commands found)'}
-│ 🍂 《《⚛*GROUP COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
-${menu.group || ''}
-│ 《《⚛*OTHER COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
+╭─「 🧠 System Info 」
+│🤖 *Bot* : ${botName}
+│👤 *Owner* : ${owner}
+│📱 *User* : ${user}
+│💻 *RAM* : ${usedRam} / ${totalRam} MB
+│⏱️ *Uptime* : ${uptime}
+│⌨️ *Prefix* : ${prefix}
+╰───────────────❖
+
+╭─「 ⚛ ${botName} Command Menu ⚛ 」
+│ ⚙️ *MAIN COMMANDS*
+${menu.main || '│ (none)'}
+│ 🧩 *GROUP COMMANDS*
+${menu.group || '│ (none)'}
+│ 🎧 *DOWNLOAD COMMANDS*
+${menu.download || '│ (none)'}
+│ 🤖 *AI COMMANDS*
+${menu.ai || '│ (none)'}
+│ 🧠 *CONVERT COMMANDS*
+${menu.convert || '│ (none)'}
+│ 🧑‍💻 *OWNER COMMANDS*
+${menu.owner || '│ (none)'}
+│ 🌸 *LOGO / ANIME*
+${menu.logo || ''}${menu.anime || ''}
+│ 🔍 *SEARCH COMMANDS*
+${menu.search || '│ (none)'}
+│ ⚡ *OTHER COMMANDS*
 ${menu.other || ''}
-│ 🍃 《《⚛*DOWNLOAD COMMANDS*⚛》
-┗━━━━━━━━━━━━━━━𖣔
-${menu.download || '│ (No commands found)'}
-│ 🌱 《《⚛*OWNER COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
-${menu.owner || '│ (No commands found)'}
-│ 🌵 《《⚛*CONVERT COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
-│ 🌿 《《⚛*AI COMMANDS*⚛》》
-${menu.ai || '│ (No commands found)'}
-┗━━━━━━━━━━━━━━━𖣔
-${menu.convert || '│ (No commands found)'}
-│ 🍁 《《⚛*LOGO/ANIME COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
-${menu.logo || '│ (No commands found)'}
-${menu.anime || '│ (No commands found)'}
-│ ♻️《《⚛*SEARCH COMMANDS*⚛》》
-┗━━━━━━━━━━━━━━━𖣔
-${menu.search || '│ (No commands found)'}
-╰──────────●●►
+╰────────────────❖
 
-> *POWERED BY 𝐀𝐆𝐍𝐈*
+> *Powered By ${botName}*
+> *Developed by ${owner}*
 `;
 
     await conn.sendMessage(from, {
-      image: { url: config.MENU_IMAGE_URL },
-      caption: madeMenu
+      image: { url: menuImg },
+      caption
     }, { quoted: mek });
 
-  } catch (e) {
-    console.error(e);
-    reply("❌ Menu error: " + e.message);
+  } catch (err) {
+    console.error(err);
+    reply("❌ Menu Error: " + err.message);
   }
 });
