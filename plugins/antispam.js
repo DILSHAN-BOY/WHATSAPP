@@ -3,17 +3,17 @@ const { cmd } = require('../command');
 cmd({
     pattern: "antibug",
     desc: "Delete bug/crash messages and remove/block sender.",
-    category: "security",
+    category: "owner",
     react: "🛡️",
     filename: __filename
 },
 async (conn, mek, m, { from, isGroup, sender, reply, isBotAdmins }) => {
     try {
-        const bugPatterns = /(‏‏|۝|۞|۩|𒀱|🇦🇫🇦🇫🇦🇫|🇮🇳🇮🇳🇮🇳)/g;
+        const bugPatterns = /(‏‏|۝|۞|۩|𒀱|👹👹👹👹|🇱🇰🇱🇰🇱🇰🇱🇰)/g;
 
         // Check message text
         const text = m?.text || m?.conversation || "";
-        if (!text) return reply("✅ Dml AntiBug active. No bug detected yet.");
+        if (!text) return reply("❤️‍🔥 AntiBug active. No bug detected yet.");
 
         // Detect bug
         if (text.length > 1500 || bugPatterns.test(text)) {
@@ -42,7 +42,7 @@ async (conn, mek, m, { from, isGroup, sender, reply, isBotAdmins }) => {
                 await conn.sendMessage(from, { text: `🚫 Blocked ${sender} for sending bug message.` });
             }
         } else {
-            reply("✅ Dml AntiBug active. No threats found in this message.");
+            reply("❤️‍🔥 Shashika AntiBug active. No threats found in this message.");
         }
     } catch (e) {
         console.error(e);
