@@ -1,7 +1,5 @@
-//dml-tech.online
-
 const { cmd } = require('../command');
-const audioEditor = require('../data/dmlaudioeditor');
+const audioEditor = require('../lib/Shasikaaudioeditor');
 
 cmd({
     pattern: 'deep',
@@ -583,3 +581,4 @@ cmd({
         await client.sendMessage(from, { react: { text: '❌', key: message.key } });
     }
 });
+
