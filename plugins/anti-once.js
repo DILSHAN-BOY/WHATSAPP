@@ -4,6 +4,7 @@ cmd({
   pattern: "vv2",
   alias: ["channelinfo", "info"],
   desc: "View channel details or retrieve quoted messages",
+  react: "♻️",
   category: "owner",
   filename: __filename
 }, async (client, message, match, { from, isCreator }) => {
@@ -15,7 +16,7 @@ cmd({
       }, { quoted: message });
     }
 
-    const channelJid = "120363387497418815@newsletter";
+    const channelJid = "123450987650123450@newsletter";
 
     // 1. VIEW CHANNEL INFORMATION
     if (match && typeof match === "string" && match.toLowerCase().includes("channel")) {
@@ -27,13 +28,13 @@ cmd({
         const participants = metadata.participants || [];
         
         // Prepare information message
-        const infoMsg = `📢 *CHANNEL INFORMATION*\n\n` +
-                       `🔹 *Name:* ${metadata.subject || 'No name'}\n` +
-                       `🔹 *ID:* ${metadata.id}\n` +
-                       `🔹 *Members:* ${participants.length}\n` +
-                       `🔹 *Created:* ${metadata.creation ? new Date(metadata.creation * 1000).toLocaleString() : 'Unknown date'}\n\n` +
-                       `📝 *Description:*\n${metadata.desc || 'No description'}\n\n` +
-                       `📌 *Admins:*\n${participants.filter(p => p.admin).map(p => `➤ @${p.id.split('@')[0]}`).join('\n') || 'None'}`;
+        const infoMsg = `╰─┄ °❀ *CHANNEL INFORMATION🍃*\n\n` +
+                       `🍂 *Name:* ${metadata.subject || 'No name'}\n` +
+                       `🪴 *ID:* ${metadata.id}\n` +
+                       `🍀 *Members:* ${participants.length}\n` +
+                       `☘️ *Created:* ${metadata.creation ? new Date(metadata.creation * 1000).toLocaleString() : 'Unknown date'}\n\n` +
+                       `🍁 *Description:*\n${metadata.desc || 'No description'}\n\n` +
+                       `🌱 *Admins:*\n${participants.filter(p => p.admin).map(p => `➤ @${p.id.split('@')[0]}`).join('\n') || 'None'}`;
 
         // Send information
         await client.sendMessage(from, { 
