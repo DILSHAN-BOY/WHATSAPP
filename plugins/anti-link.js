@@ -1,93 +1,77 @@
 const { cmd } = require('../command');
-const config = require("../config");
+const { readEnv } = require('../lib/database');
 
 cmd({
-  'on': "body"
-}, async (conn, m, store, {
-  from,
-  body,
-  sender,
-  isGroup,
-  isAdmins,
-  isBotAdmins,
-  reply
-}) => {
+  on: "body"
+}, async (conn, m, store, { from, body, sender, isGroup, isAdmins, isBotAdmins, reply }) => {
   try {
-    // Initialize warnings if not exists
-    if (!global.warnings) {
-      global.warnings = {};
-    }
+    //=== Read Anti-Link setting from DB ===//
+    const config = await readEnv();
+    if (config.ANTI_LINK !== 'true') return;
 
-    // Only act in groups where bot is admin and sender isn't admin
-    if (!isGroup || isAdmins || !isBotAdmins) {
-      return;
-    }
+    //=== Initialize warnings memory ===//
+    if (!global.warnings) global.warnings = {};
 
-    // List of link patterns to detect
+    //=== Link patterns ===//
     const linkPatterns = [
-      /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi, // WhatsApp links
-      /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,  // WhatsApp API links
-      /wa\.me\/\S+/gi,                                    // WhatsApp.me links
-      /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,         // Telegram links
-      /https?:\/\/(?:www\.)?\.com\/\S+/gi,                // Generic .com links
-      /https?:\/\/(?:www\.)?twitter\.com\/\S+/gi,         // Twitter links
-      /https?:\/\/(?:www\.)?linkedin\.com\/\S+/gi,        // LinkedIn links
-      /https?:\/\/(?:whatsapp\.com|channel\.me)\/\S+/gi,  // Other WhatsApp/channel links
-      /https?:\/\/(?:www\.)?reddit\.com\/\S+/gi,          // Reddit links
-      /https?:\/\/(?:www\.)?discord\.com\/\S+/gi,         // Discord links
-      /https?:\/\/(?:www\.)?twitch\.tv\/\S+/gi,           // Twitch links
-      /https?:\/\/(?:www\.)?vimeo\.com\/\S+/gi,           // Vimeo links
-      /https?:\/\/(?:www\.)?dailymotion\.com\/\S+/gi,     // Dailymotion links
-      /https?:\/\/(?:www\.)?medium\.com\/\S+/gi           // Medium links
-    
+      /https?:\/\/(?:chat\.whatsapp\.com|wa\.me)\/\S+/gi,
+      /https?:\/\/(?:api\.whatsapp\.com|wa\.me)\/\S+/gi,
+      /https?:\/\/(?:t\.me|telegram\.me)\/\S+/gi,
+      /https?:\/\/(?:www\.)?\w+\.com\/\S+/gi,
+      /https?:\/\/(?:www\.)?(twitter|linkedin|reddit|discord|twitch|vimeo|dailymotion|medium)\.com\/\S+/gi
     ];
 
-    // Check if message contains any forbidden links
-    const containsLink = linkPatterns.some(pattern => pattern.test(body));
+    const containsLink = linkPatterns.some(p => p.test(body));
+    if (!containsLink) return;
 
-    // Only proceed if anti-link is enabled and link is detected
-    if (containsLink && config.ANTI_LINK === 'true') {
-      console.log(`Link detected from ${sender}: ${body}`);
+    console.log(`[⚠️ Anti-Link] ${sender}: ${body}`);
 
-      // Try to delete the message
-      try {
-        await conn.sendMessage(from, {
-          delete: m.key
-        });
-        console.log(`Message deleted: ${m.key.id}`);
-      } catch (error) {
-        console.error("Failed to delete message:", error);
+    //=== GROUP HANDLING ===//
+    if (isGroup) {
+      if (isAdmins) return; // skip admins
+
+      if (isBotAdmins) {
+        try {
+          await conn.sendMessage(from, { delete: m.key });
+        } catch (err) {
+          console.error("❌ Delete failed:", err);
+        }
       }
 
-      // Update warning count for user
       global.warnings[sender] = (global.warnings[sender] || 0) + 1;
-      const warningCount = global.warnings[sender];
+      const count = global.warnings[sender];
 
-      // Handle warnings
-      if (warningCount < 4) {
-        // Send warning message
+      if (count < 3) {
         await conn.sendMessage(from, {
-          text: `‎*⚠️LINKS ARE NOT ALLOWED⚠️*\n` +
-                `*╭────⬡ DML-WARNING ⬡────*\n` +
-                `*├▢ USER :* @${sender.split('@')[0]}!\n` +
-                `*├▢ COUNT : ${warningCount}*\n` +
-                `*├▢ REASON : LINK SENDING*\n` +
-                `*├▢ WARN LIMIT : 3*\n` +
-                `*╰────────────────*`,
+          text: `🚫 *⌲LINKS ARE NOT ALLOWED HERE!*\n\n` +
+                `*╭───☣️─⬡ WARNING SYSTEM ⬡───☣️─*\n` +
+                `*├▢ USER:* @${sender.split('@')[0]}\n` +
+                `*├▢ COUNT:* ${count}\n` +
+                `*├▢ LIMIT:* 3\n` +
+                `*╰─────☣️──────────☣️───*`,
           mentions: [sender]
         });
       } else {
-        // Remove user if they exceed warning limit
         await conn.sendMessage(from, {
-          text: `@${sender.split('@')[0]} *HAS BEEN REMOVED - WARN LIMIT EXCEEDED!*`,
+          text: `@${sender.split('@')[0]} *HAS BEEN REMOVED (3 WARNINGS)* 🚫`,
           mentions: [sender]
         });
         await conn.groupParticipantsUpdate(from, [sender], "remove");
         delete global.warnings[sender];
       }
     }
+
+    //=== INBOX (PRIVATE CHAT) HANDLING ===//
+    else {
+      await conn.sendMessage(from, {
+        text: `⚠️ *Anti-Link Active*\n\n🚫 Links are not allowed here!\n> @${sender.split('@')[0]}`,
+        mentions: [sender]
+      });
+      console.log(`🔒 Private Anti-Link Triggered for ${sender}`);
+    }
+
   } catch (error) {
-    console.error("Anti-link error:", error);
-    reply("❌ An error occurred while processing the message.");
+    console.error("Anti-Link Error:", error);
+    reply("❌ Error while checking links.");
   }
 });
