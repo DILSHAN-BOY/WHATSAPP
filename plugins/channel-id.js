@@ -1,11 +1,11 @@
 const { cmd } = require("../command");
 
 cmd({
-  pattern: "cid",
-  alias: ["newsletter", "id"],
+  pattern: "newsletter",
+  alias: ["cid", "id"],
   react: "📡",
   desc: "Get WhatsApp Channel info from link",
-  category: "whatsapp",
+  category: "other",
   filename: __filename
 }, async (conn, mek, m, {
   from,
