@@ -5,6 +5,7 @@ cmd({
     pattern: "antidelete",
     alias: ['antidel', 'del'],
     desc: "Toggle anti-delete feature",
+    react: "😶‍🌫️",
     category: "owner",
     filename: __filename
 },
