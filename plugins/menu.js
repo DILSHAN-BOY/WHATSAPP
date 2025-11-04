@@ -42,12 +42,12 @@ cmd({
       }  
     }  
 
-    
+    //=== Caption ===//
     let caption = `𝐘𝐨𝐨  ${user}
 *Wᴇʟᴄᴏᴍᴇ Tᴏ ΛGПI* 
 
-╭─「 🛠️ 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧 」 
-│🤖 *Bot*: 𝐀𝐆𝐍𝐈
+╭─「 🛠️ 𝐒𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐃𝐢𝐥𝐬𝐡𝐚𝐧 」 
+│🤖 *Bot*: ${botName}
 │🙋‍♂️ *User*: ${user}
 │📱 *Owner*: ${owner}
 │⏳ *Uptime*: ${uptime}
@@ -55,7 +55,9 @@ cmd({
 │🛎️ *Prefix*: ${config.PREFIX}
 ╰──────────●●►
 
-╭─「 ⚛𝐀𝐆𝐍𝐈⚛ MENU━━𖣔 」 
+╭─「 ⚛${botName}⚛ MENU━━𖣔 」
+
+
 │ ⚙️ 《《⚛*MAIN COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.main || '│ (No commands found)'}
@@ -73,10 +75,10 @@ ${menu.download || '│ (No commands found)'}
 ${menu.owner || '│ (No commands found)'}
 │ 🌵 《《⚛*CONVERT COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
-│ 🌿 《《⚛*AI COMMANDS*⚛》》
-${menu.ai || '│ (No commands found)'}
-┗━━━━━━━━━━━━━━━𖣔
 ${menu.convert || '│ (No commands found)'}
+│ 🌿 《《⚛*AI COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.ai || '│ (No commands found)'}
 │ 🍁 《《⚛*LOGO/ANIME COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.logo || '│ (No commands found)'}
@@ -90,8 +92,9 @@ ${menu.search || '│ (No commands found)'}
 > *Developed by ${owner}*
 `;
 
-    await conn.sendMessage(from, { image: { url: menuImg }, caption: desc }, { quoted: mek });
-    // Send video first (rounded corners, normal playback)
+    // === Send Media Menu === //
+    await conn.sendMessage(from, { image: { url: menuImg }, caption }, { quoted: mek });
+
     await conn.sendMessage(from, {
       video: { url: menuVid },
       caption,
@@ -100,7 +103,6 @@ ${menu.search || '│ (No commands found)'}
       gifPlayback: false
     }, { quoted: mek });
 
-    // Send voice note separately
     await conn.sendMessage(from, {
       audio: { url: menuAudio },
       mimetype: 'audio/ogg',
