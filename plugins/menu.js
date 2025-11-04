@@ -18,8 +18,7 @@ cmd({
     const prefix = config.PREFIX || ".";
     const owner = config.OWNER_NAME || "Shashika Dilshan";
     const botName = config.BOT_NAME || "AGNI";
-    const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";  
-    const menuVid = config.MENU_VIDEO_URL || "https://files.catbox.moe/kjlx3l.mp4";
+    const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg"; 
     const menuAudio = config.MENU_AUDIO_URL || "https://files.catbox.moe/sp4tb9.ogg";
 
     //=== System Stats ===//  
@@ -32,7 +31,7 @@ cmd({
     let menu = {  
       main: '', group: '', owner: '', ai: '',  
       download: '', search: '', convert: '',  
-      logo: '', anime: '', other: ''  
+      logo: '', anime: '', other: '', tools ''  
     };  
   
     //=== Auto add commands by category ===//  
@@ -61,31 +60,44 @@ cmd({
 │ ⚙️ 《《⚛*MAIN COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.main || '│ (No commands found)'}
+
 │ 🍂 《《⚛*GROUP COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.group || ''}
+
 │ 《《⚛*OTHER COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.other || ''}
+
 │ 🍃 《《⚛*DOWNLOAD COMMANDS*⚛》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.download || '│ (No commands found)'}
+
+│ ♻️《《⚛*TOOLS COMMANDS*⚛》》
+┗━━━━━━━━━━━━━━━𖣔
+${menu.tools || '│ (No commands found)'}
+
 │ 🌱 《《⚛*OWNER COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.owner || '│ (No commands found)'}
+
 │ 🌵 《《⚛*CONVERT COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.convert || '│ (No commands found)'}
+
 │ 🌿 《《⚛*AI COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.ai || '│ (No commands found)'}
+
 │ 🍁 《《⚛*LOGO/ANIME COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.logo || '│ (No commands found)'}
 ${menu.anime || '│ (No commands found)'}
+
 │ ♻️《《⚛*SEARCH COMMANDS*⚛》》
 ┗━━━━━━━━━━━━━━━𖣔
 ${menu.search || '│ (No commands found)'}
+
 ╰──────────●●►
 
 > *Powered By ${botName}*
@@ -94,14 +106,6 @@ ${menu.search || '│ (No commands found)'}
 
     // === Send Media Menu === //
     await conn.sendMessage(from, { image: { url: menuImg }, caption }, { quoted: mek });
-
-    await conn.sendMessage(from, {
-      video: { url: menuVid },
-      caption,
-      mimetype: 'video/mp4',
-      fileName: `${botName}_Menu.mp4`,
-      gifPlayback: false
-    }, { quoted: mek });
 
     await conn.sendMessage(from, {
       audio: { url: menuAudio },
@@ -118,83 +122,164 @@ ${menu.search || '│ (No commands found)'}
 // ============================================
 // INTERACTIVE MENU (.menu2)
 // ============================================
-let menuCache = {};
 
 cmd({
-  pattern: "menu2",
-  react: "🧭",
-  desc: "Interactive category menu",
-  category: "main",
-  filename: __filename
-}, async (conn, mek, m, { from, reply, sender }) => {
-  try {
-    const config = await readEnv();
-    const botName = config.BOT_NAME || "AGNI";
+    pattern: "menu2",
+    alias: ["list"],
+    desc: "bot's commands",
+    react: "📜",
+    category: "main"
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+    try {
+        let desc = `*👋 Hello ${user}*
 
-    const categories = [
-      "👥 Group Commands",
-      "📥 Download Commands",
-      "🤖 AI Commands",
-      "⚙️ Convert Commands",
-      "👑 Owner Commands",
-      "🎨 Logo / Anime",
-      "🔍 Search Commands",
-      "⚡ Other Commands"
-    ];
+*╭─「 $${botName} MENU2🍂🍃」*
+*│◈ ʀᴜɴᴛɪᴍᴇ : ${runtime(process.uptime())}*
+*│◈ ʀᴀᴍ ᴜꜱᴀɢᴇ : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB*
+*│◈ ᴘʟᴀᴛꜰᴏʀᴍ : ${os.hostname()}*
+*│◈ ᴠᴇʀꜱɪᴏɴ : 3.0.0*
+*╰──────────●●►*
 
-    let menuText = `╭───💫 *${botName} MENU* 💫───╮\n`;
-    menuText += `│ 🧭 *Choose a Category:*\n│\n`;
-    categories.forEach((cat, i) => {
-      menuText += `│ ${i + 1}. ${cat}\n`;
-    });
-    menuText += `╰────────────────────────────╯\n\n_Reply with a number (1-8)_`;
+*╭╼╼╼╼╼╼╼╼╼╼*
+*├ 1 • MAIN*
+*├ 2 • SEARCH*
+*├ 3 • DOWNLOAD*
+*├ 4 • GROUP*
+*├ 5 • OWNER*
+*├ 6 • FUN*
+*╰╼╼╼╼╼╼╼╼╼╼*
 
-    await reply(menuText);
-    menuCache[sender] = { step: "choose", prefix: config.PREFIX || "." };
+_*🌟 Reply with the Number you want to select*_
 
-  } catch (err) {
-    console.log(err);
-    reply("❌ Error showing menu2: " + err.message);
-  }
-});
+> *𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}*`;
 
-cmd({ on: "message" }, async (conn, mek, m, { from, body, sender, reply }) => {
-  try {
-    if (!menuCache[sender]) return;
-    const userState = menuCache[sender];
-    if (userState.step !== "choose") return;
+        const vv = await conn.sendMessage(from, { image: { url: menuImg }, caption: desc }, { quoted: mek });
 
-    const choice = parseInt(body.trim());
-    if (isNaN(choice) || choice < 1 || choice > 8) {
-      return reply("⚠️ Invalid choice! Reply with number 1-8.");
+        conn.ev.on('messages.upsert', async (msgUpdate) => {
+            const msg = msgUpdate.messages[0];
+            if (!msg.message || !msg.message.extendedTextMessage) return;
+
+            const selectedOption = msg.message.extendedTextMessage.text.trim();
+
+            if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === vv.key.id) {
+                switch (selectedOption) {
+                    case '1':
+                    reply(`
+                    
+
+╔════════════════════════╗  
+║ 🔧 **𝗠𝗔𝗜𝗡 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧** 🔧 ║  
+╚════════════════════════╝  
+
+╭─━─〔 ⚡ **Commands** ⚡ 〕━━╮  
+${menu.main || '│ (No commands found)'}
+╰─━─━─━─━─━─━─━─━─╯  
+
+📊 **Total Commands in MAIN:** 7  
+ 
+> 💡 **𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}**  
+
+`);
+
+                        break;
+                    case '2':               
+                        reply(`
+
+╔════════════════════════╗  
+║ 🔍 **𝗦𝗘𝗔𝗥𝗖𝗛 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧** 🔍 ║  
+╚════════════════════════╝  
+
+╭─━〔 ⚡ **Commands** ⚡ 〕━──━╮  
+${menu.search || '│ (No commands found)'}
+╰─━─━─━━─━─━─━─━─━─╯  
+
+📊 **Total Commands in SEARCH:** 2
+
+> 💡 **𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}**
+`);
+                        break;
+                    case '3':               
+                        reply(`
+╔════════════════════════╗  
+║ 📥 **𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧** 📥 ║  
+╚════════════════════════╝  
+
+╭─━━〔 ⚡ **Commands** ⚡ 〕━─━━╮  
+${menu.download || '│ (No commands found)'}
+╰─━─━─━─━─━─━─━─━─━─╯  
+
+📊 **Total Commands in DOWNLOAD:** 12
+ 
+> 💡 **𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}**  
+
+`);
+                    
+                        break;
+                    case '4':               
+                        reply(`
+╔════════════════════════╗  
+║ 👥 **𝗚𝗥𝗢𝗨𝗣 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧** 👥 ║  
+╚════════════════════════╝  
+
+╭─━──━〔 ⚡ **Commands** ⚡ 〕━─━╮  
+${menu.group || '│ (No commands found)'}
+╰─━─━─━─━─━─━─━─━─━━─╯  
+
+📊 **Total Commands in GROUP:** 20  
+
+
+> 💡 **𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}**  
+`);
+                    break;
+                    case '5':               
+                        reply(`
+╔════════════════════════╗  
+║ 👨‍💻 **𝗢𝗪𝗡𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧** 👨‍💻 ║  
+╚════════════════════════╝  
+
+╭─━〔 🍿 **Commands** 🍿 〕━──━╮ 
+${menu.owner || '│ (No commands found)'}
+╰─━━─━─━──━─━─━━─━─╯  
+
+📊 **Total Commands in Owner:** 9
+
+ 
+> 💡 **𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}**  
+
+`);
+                    break;
+                    case '6':               
+                        reply(`
+╔════════════════════════╗  
+║ 👨‍💻 **𝐓𝐎𝐎𝐋𝐒 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧** 👨‍💻 ║  
+╚════════════════════════╝  
+
+╭─━〔 🍿 **Commands** 🍿 〕━──━╮ 
+${menu.tool || '│ (No commands found)'}
+╰─━━─━─━──━─━─━━─━─╯  
+
+📊 **Total Commands in Owner:** 10
+
+ 
+> 💡 **𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 ${botName}**  
+
+`);
+                       
+                        
+                    break;
+                    default:
+                    
+                        reply("Invalid option. Please select a valid option🔴");
+                }
+
+            }
+        });
+
+    } catch (e) {
+        console.error(e);
+        await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
+        reply('An error occurred while processing your request.');
     }
-
-    const categoryMap = {
-      1: "group",
-      2: "download",
-      3: "ai",
-      4: "convert",
-      5: "owner",
-      6: "logo",
-      7: "search",
-      8: "other"
-    };
-
-    const selectedCategory = categoryMap[choice];
-    const selectedCommands = commands.filter(c => c.category === selectedCategory && c.pattern);
-
-    let menuList = `╭───📜 *${selectedCategory.toUpperCase()} COMMANDS* 📜───╮\n`;
-    if (selectedCommands.length === 0) menuList += "│ (No commands found)\n";
-    else selectedCommands.forEach((cmdObj, i) => {
-      menuList += `│ ${i + 1}. ⚡ ${userState.prefix}${cmdObj.pattern} — ${cmdObj.desc || ''}\n`;
-    });
-    menuList += `╰────────────────────────────╯`;
-
-    await reply(menuList);
-    delete menuCache[sender];
-
-  } catch (err) {
-    console.error(err);
-    reply("❌ Menu2 Error: " + err.message);
-  }
 });
+              
