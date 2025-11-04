@@ -31,7 +31,7 @@ cmd({
     let menu = {  
       main: '', group: '', owner: '', ai: '',  
       download: '', search: '', convert: '',  
-      logo: '', anime: '', other: '', tools ''  
+      logo: '', anime: '', other: '', tools: ''  
     };  
   
     //=== Auto add commands by category ===//  
