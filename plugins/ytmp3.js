@@ -28,7 +28,7 @@ cmd({
 
         await reply("⏳ ගීතය download කරමින්... කරුණාකර බලා සිටින්න.");
 
-        const apiUrl = `https://apiskeith.vercel.app/download/dlmp3?url=${encodeURIComponent(videoUrl)}`;
+        const apiUrl = `https://apiskeith.vercel.app/download/audio?url=${encodeURIComponent(videoUrl)}`;
 
         // Retry wrapper
         async function fetchWithRetry(url, retries = 3, delay = 3000) {
