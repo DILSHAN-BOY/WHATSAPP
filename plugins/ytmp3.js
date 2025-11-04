@@ -1,74 +1,61 @@
-const { cmd } = require('../command');
-const yts = require('yt-search');
-const fetch = require('node-fetch');
+const { cmd } = require("../command");
+const fetch = require("node-fetch");
+const yts = require("yt-search");
 
 cmd({
-    pattern: "ytmp3",
-    alias: ["mp3", "audio"],
-    react: "🎵",
-    desc: "YouTube ගීතයක් search & download කරන්න (Anyone use, no DB)",
-    category: "download",
-    use: ".song <ගීතයේ නම හෝ YouTube URL එක>",
-    filename: __filename
-}, async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return reply("❌ කරුණාකර ගීතයේ නමක් හෝ YouTube URL එකක් දෙන්න!");
+  pattern: "yta",
+  alias: ["ytmp3", "song", "audio"],
+  react: "🎶",
+  desc: "YouTube song search & download (via API)",
+  category: "download",
+  use: ".yta <song name or YouTube URL>",
+  filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("🎵 *Please provide a YouTube link or song name!*\n\nExample:\n.yta Alan Walker - Faded");
 
-        let videoUrl, title;
-
-        if (q.match(/(youtube\.com|youtu\.be)/)) {
-            videoUrl = q;
-            title = "YouTube Song";
-        } else {
-            const search = await yts(q);
-            if (!search.videos.length) return reply("❌ කිසිදු result එකක් හමු නොවීය!");
-            videoUrl = search.videos[0].url;
-            title = search.videos[0].title;
-        }
-
-        await reply("⏳ ගීතය download කරමින්... කරුණාකර බලා සිටින්න.");
-
-        const apiUrl = `https://apiskeith.vercel.app/download/audio?url=${encodeURIComponent(videoUrl)}`;
-
-        // Retry wrapper
-        async function fetchWithRetry(url, retries = 3, delay = 3000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const res = await fetch(url);
-                    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-                    return res;
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    await new Promise(r => setTimeout(r, delay));
-                }
-            }
-        }
-
-        const response = await fetchWithRetry(apiUrl);
-        const data = await response.json();
-
-        if (!data.result || !data.result.download_url)
-            return reply("❌ ගීතය download link එක ලබාගැනීමට අසාර්ථක විය!");
-
-        const audioRes = await fetchWithRetry(data.result.download_url);
-        const buffer = await audioRes.arrayBuffer();
-
-        // File size check (~70MB limit)
-        const sizeMB = buffer.byteLength / (1024 * 1024);
-        if (sizeMB > 70)
-            return reply("❌ ගීතය විශාලයි (>70MB). කෙටි clip එකක් උත්සාහ කරන්න.");
-
-        await conn.sendMessage(from, {
-            audio: Buffer.from(buffer),
-            mimetype: 'audio/mpeg',
-            fileName: `${title.replace(/[^\w\s]/gi, '').substring(0, 60)}.mp3`,
-            caption: `🎶 *${title.substring(0, 60)}*`
-        }, { quoted: mek });
-
-        return reply(`✅ ගීතය යවනු ලැබුවා: *${title}*`);
-
-    } catch (error) {
-        console.error("Song Download Error:", error);
-        return reply(`❌ Error: ${error.message}`);
+    let videoUrl;
+    if (q.match(/(youtube\.com|youtu\.be)/)) {
+      videoUrl = q;
+    } else {
+      const search = await yts(q);
+      if (!search.videos.length) return reply("❌ No results found!");
+      videoUrl = search.videos[0].url;
     }
+
+    reply("⏳ *Downloading audio... please wait!*");
+
+    // 🔹 API Endpoint (fast & reliable)
+    const api = `https://apiskeith.vercel.app/download/yta?url=${encodeURIComponent(videoUrl)}`;
+
+    const res = await fetch(api);
+    const data = await res.json();
+
+    if (!data.result || !data.result.download_url)
+      return reply("❌ Failed to fetch download link. Try again later.");
+
+    const { title, download_url, thumbnail } = data.result;
+
+    // 📤 Send thumbnail & caption
+    await conn.sendMessage(from, {
+      image: { url: thumbnail },
+      caption: `🎶 *Title:* ${title}\n🔗 *URL:* ${videoUrl}\n\n🎧 *Uploading MP3...*`
+    }, { quoted: mek });
+
+    // 📥 Download and send audio
+    const audioRes = await fetch(download_url);
+    const buffer = await audioRes.arrayBuffer();
+
+    await conn.sendMessage(from, {
+      audio: Buffer.from(buffer),
+      mimetype: "audio/mpeg",
+      fileName: `${title}.mp3`,
+      caption: `🎵 *${title}*\n\n✅ Successfully downloaded via API`
+    }, { quoted: mek });
+
+  } catch (e) {
+    console.error("YTA Plugin Error:", e);
+    reply(`❌ *Error:* ${e.message}`);
+  }
 });
