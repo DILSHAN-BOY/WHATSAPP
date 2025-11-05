@@ -27,7 +27,7 @@ async (conn, mek, m, { from, q, reply }) => {
     reply("⏳ *Downloading audio... please wait!*");
 
     // 🔹 API Endpoint (fast & reliable)
-    const api = `https://apiskeith.vercel.app/download/yta2?url=${encodeURIComponent(videoUrl)}`;
+    const api = `https://apiskeith.vercel.app/download/mp3?url=${encodeURIComponent(videoUrl)}`;
 
     const res = await fetch(api);
     const data = await res.json();
