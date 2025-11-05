@@ -99,7 +99,7 @@ const { readEnv } = require('./lib/database');
     malvin.sendMessage(ownerNumber + "@s.whatsapp.net", {
       image: {
         url: `https://files.catbox.moe/4kux2y.jpg`,
-      }
+      },
       caption: up,
     });
     malvin.sendMessage("94705104830@s.whatsapp.net", {
