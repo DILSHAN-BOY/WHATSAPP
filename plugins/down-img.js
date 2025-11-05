@@ -10,7 +10,7 @@ cmd({
   'alias': ["image", "pinterest", "pinimg"],
   'react': '🖼️',
   'desc': "Search and download images from Pinterest using keywords.",
-  'category': "image",
+  'category': "tools",
   'use': ".img <keywords>",
   'filename': __filename
 }, async (_0x1a9409, _0x59fdb9, _0x3f150e, {
