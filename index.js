@@ -1,3 +1,4 @@
+// =================== IMPORTS ===================
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -8,62 +9,57 @@ const {
   Browsers,
 } = require("@whiskeysockets/baileys");
 
-const l = console.log;
+const fs = require("fs");
+const P = require("pino");
+const axios = require("axios");
+const { File } = require("megajs");
+const express = require("express");
+const path = require("path");
+const config = require("./config");
+
 const {
   getBuffer,
   getGroupAdmins,
-  getRandom,
-  h2k,
-  isUrl,
-  Json,
-  runtime,
-  sleep,
-  fetchJson,
+  sms,
 } = require("./lib/functions");
-const fs = require("fs");
-const P = require("pino");
-const config = require("./config");
-const qrcode = require("qrcode-terminal");
-const util = require("util");
-const { sms, downloadMediaMessage } = require("./lib/msg");
-const axios = require("axios");
-const { File } = require("megajs");
-const os = require('os'); 
-const moment = require('moment'); 
 
-
-const ownerNumber = config.OWNER_NUM;
-const connectDB = require('./lib/mongodb');
+const connectDB = require("./lib/mongodb");
 connectDB();
 
-//===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-const sessdata = config.SESSION_ID.replace("suho~", '')
-const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
-filer.download((err, data) => {
-if(err) throw err
-fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
-console.log("Session downloaded ✅")
-})})}
-
-const express = require("express");
+const ownerNumber = config.OWNER_NUM;
 const app = express();
 const port = process.env.PORT || 8000;
 
-//=============================================
+// =================== SESSION AUTH ===================
+if (!fs.existsSync(__dirname + "/auth_info_baileys/creds.json")) {
+  if (!config.SESSION_ID) {
+    console.log("Please add your session to SESSION_ID env !!");
+    process.exit(1);
+  }
 
+  const sessdata = config.SESSION_ID.replace("suho~", "");
+  const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+  filer.download((err, data) => {
+    if (err) throw err;
+    fs.writeFile(__dirname + "/auth_info_baileys/creds.json", data, () => {
+      console.log("Session downloaded ✅");
+    });
+  });
+}
+
+// =================== CONNECT TO WA ===================
 async function connectToWA() {
-  console.log("Connecting bot");
-const { readEnv } = require('./lib/database');
+  console.log("Connecting bot...");
+
+  const { readEnv } = require("./lib/database");
   const dbConfig = await readEnv();
-  const prefix = dbConfig.PREFIX || '.';
-  //===========================
+  const prefix = dbConfig.PREFIX || ".";
 
   const { state, saveCreds } = await useMultiFileAuthState(
     __dirname + "/auth_info_baileys/"
   );
-  var { version } = await fetchLatestBaileysVersion();
+
+  const { version } = await fetchLatestBaileysVersion();
 
   const malvin = makeWASocket({
     logger: P({ level: "silent" }),
@@ -74,53 +70,58 @@ const { readEnv } = require('./lib/database');
     version,
   });
 
+  // =================== CONNECTION UPDATE ===================
   malvin.ev.on("connection.update", async (update) => {
-  const { connection, lastDisconnect } = update;
-  if (connection === "close") {
-    if (
-      lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
-    ) {
-      connectToWA();
-    }
-  } else if (connection === "open") {
-    console.log(" Installing... ");
-    const path = require("path");
-    fs.readdirSync("./plugins/").forEach((plugin) => {
-      if (path.extname(plugin).toLowerCase() == ".js") {
-        require("./plugins/" + plugin);
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "close") {
+      if (
+        lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
+      ) {
+        connectToWA();
       }
-    });
-    console.log(" installed successful ✅");
-    console.log(" connected to whatsapp ✅");
+    } else if (connection === "open") {
+      console.log("Connected to WhatsApp ✅");
+      console.log("Loading plugins...");
 
-    let up = `connected successful ✅`;
-    let up1 = `🪀, I made bot successful`;
+      fs.readdirSync("./plugins/").forEach((plugin) => {
+        if (path.extname(plugin).toLowerCase() === ".js") {
+          require("./plugins/" + plugin);
+        }
+      });
 
-    malvin.sendMessage(ownerNumber + "@s.whatsapp.net", {
-      image: {
-        url: `https://files.catbox.moe/4kux2y.jpg`,
-      },
-      caption: up,
-    });
-    malvin.sendMessage("94705104830@s.whatsapp.net", {
-      image: {
-        url: `https://files.catbox.moe/4kux2y.jpg`,
-      },
-      caption: up1,
-    });
- 
+      console.log("Plugins loaded ✅");
 
+      const up = `Connected successfully ✅`;
+      const up1 = `🪀 Bot is running!`;
+
+      // Send startup message
+      malvin.sendMessage(ownerNumber + "@s.whatsapp.net", {
+        image: { url: "https://files.catbox.moe/4kux2y.jpg" },
+        caption: up,
+      });
+
+      malvin.sendMessage("94705104830@s.whatsapp.net", {
+        image: { url: "https://files.catbox.moe/4kux2y.jpg" },
+        caption: up1,
+      });
+    }
+  });
+
+  // =================== SAVE CREDS ===================
   malvin.ev.on("creds.update", saveCreds);
 
+  // =================== MESSAGES ===================
   malvin.ev.on("messages.upsert", async (mek) => {
     mek = mek.messages[0];
     if (!mek.message) return;
+
     mek.message =
       getContentType(mek.message) === "ephemeralMessage"
         ? mek.message.ephemeralMessage.message
         : mek.message;
 
-    // Check if the message is a status update and handle auto-reading and reacting
+    // AUTO READ STATUS & REACT
     if (
       mek.key &&
       mek.key.remoteJid === "status@broadcast" &&
@@ -128,212 +129,72 @@ const { readEnv } = require('./lib/database');
     ) {
       try {
         await malvin.readMessages([mek.key]);
-        
-        //____STATUS AUTO REACT_____ 
-        const mnyako = await jidNormalizedUser(malvin.user.id);
-        const treact = "💚"; // The reaction to add
-        await malvin.sendMessage(mek.key.remoteJid, {
-          react: { key: mek.key, text: treact },
-        }, { statusJidList: [mek.key.participant, mnyako] });
-
-        console.log("📖 Status message marked as read and reacted to");
+        const myJid = await jidNormalizedUser(malvin.user.id);
+        const reactEmoji = "💚";
+        await malvin.sendMessage(
+          mek.key.remoteJid,
+          { react: { key: mek.key, text: reactEmoji } },
+          { statusJidList: [mek.key.participant, myJid] }
+        );
       } catch (err) {
-        console.error("❌ Failed to mark status as read:", err);
+        console.error("Failed to mark status as read:", err);
       }
     }
 
-    // Auto-recording feature check
+    // AUTO RECORDING PRESENCE
     if (config.AUTO_RECORDING) {
       const jid = mek.key.remoteJid;
-      // Send auto recording presence
       await malvin.sendPresenceUpdate("recording", jid);
-
-      // Small delay to simulate realistic behavior
       await new Promise((res) => setTimeout(res, 1000));
     }
 
-    const m = sms(malvin, mek);
-    const type = getContentType(mek.message);
-    const content = JSON.stringify(mek.message);
-    const from = mek.key.remoteJid;
-    const quoted =
-      type == "extendedTextMessage" &&
-      mek.message.extendedTextMessage.contextInfo != null
-        ? mek.message.extendedTextMessage.contextInfo.quotedMessage || []
-        : [];
     const body =
-      type === "conversation"
+      getContentType(mek.message) === "conversation"
         ? mek.message.conversation
-        : type === "extendedTextMessage"
+        : getContentType(mek.message) === "extendedTextMessage"
         ? mek.message.extendedTextMessage.text
-        : type == "imageMessage" && mek.message.imageMessage.caption
+        : getContentType(mek.message) === "imageMessage" &&
+          mek.message.imageMessage.caption
         ? mek.message.imageMessage.caption
-        : type == "videoMessage" && mek.message.videoMessage.caption
+        : getContentType(mek.message) === "videoMessage" &&
+          mek.message.videoMessage.caption
         ? mek.message.videoMessage.caption
         : "";
+
     const isCmd = body.startsWith(prefix);
-    const command = isCmd
-      ? body.slice(prefix.length).trim().split(" ").shift().toLowerCase()
-      : "";
-    const args = body.trim().split(/ +/).slice(1);
-    const q = args.join(" ");
-    const isGroup = from.endsWith("@g.us");
+    const from = mek.key.remoteJid;
     const sender = mek.key.fromMe
-      ? malvin.user.id.split(":")[0] + "@s.whatsapp.net" || malvin.user.id
-      : mek.key.participant || mek.key.remoteJid;
-    const senderNumber = sender.split("@")[0];
-    const botNumber = malvin.user.id.split(":")[0];
-    const pushname = mek.pushName || "Sin Nombre";
-    const isMe = botNumber.includes(senderNumber);
-    const isOwner = ownerNumber.includes(senderNumber) || isMe;
-    const botNumber2 = await jidNormalizedUser(malvin.user.id);
-    const groupMetadata = isGroup
-      ? await malvin.groupMetadata(from).catch((e) => {})
-      : "";
-    const groupName = isGroup ? groupMetadata.subject : "";
-    const participants = isGroup ? await groupMetadata.participants : "";
-    const groupAdmins = isGroup ? await getGroupAdmins(participants) : "";
-    const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false;
-    const isAdmins = isGroup ? groupAdmins.includes(sender) : false;
-    const isReact = m.message.reactionMessage ? true : false;
-    const reply = (teks) => {
-      malvin.sendMessage(from, { text: teks }, { quoted: mek });
+      ? malvin.user.id.split(":")[0] + "@s.whatsapp.net"
+      : mek.key.participant || from;
+
+    const reply = (text) => {
+      malvin.sendMessage(from, { text }, { quoted: mek });
     };
 
-    malvin.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
-      let mime = "";
-      let res = await axios.head(url);
-      mime = res.headers["content-type"];
-      if (mime.split("/")[1] === "gif") {
-        return malvin.sendMessage(
-          jid,
-          {
-            video: await getBuffer(url),
-            caption: caption,
-            gifPlayback: true,
-            ...options,
-          },
-          { quoted: quoted, ...options }
-        );
-      }
-      let type = mime.split("/")[0] + "Message";
-      if (mime === "application/pdf") {
-        return malvin.sendMessage(
-          jid,
-          {
-            document: await getBuffer(url),
-            mimetype: "application/pdf",
-            caption: caption,
-            ...options,
-          },
-          { quoted: quoted, ...options }
-        );
-      }
-      if (mime.split("/")[0] === "image") {
-        return malvin.sendMessage(
-          jid,
-          { image: await getBuffer(url), caption: caption, ...options },
-          { quoted: quoted, ...options }
-        );
-      }
-      if (mime.split("/")[0] === "video") {
-        return malvin.sendMessage(
-          jid,
-          {
-            video: await getBuffer(url),
-            caption: caption,
-            mimetype: "video/mp4",
-            ...options,
-          },
-          { quoted: quoted, ...options }
-        );
-      }
-      if (mime.split("/")[0] === "audio") {
-        return malvin.sendMessage(
-          jid,
-          {
-            audio: await getBuffer(url),
-            caption: caption,
-            mimetype: "audio/mpeg",
-            ...options,
-          },
-          { quoted: quoted, ...options }
-        );
-      }
-    }; 
+    // =================== WORK TYPE ===================
+    if (!ownerNumber.includes(sender) && config.MODE === "private") return;
+    if (!ownerNumber.includes(sender) && mek.key.remoteJid.endsWith("@g.us") && config.MODE === "inbox") return;
+    if (!ownerNumber.includes(sender) && !mek.key.remoteJid.endsWith("@g.us") && config.MODE === "groups") return;
 
-    // ============ SIMPLE ANTI DELETE TEXT ONLY ============
-malvin.ev.on('messages.delete', async (item) => {
-  try {
-    const message = item.messages[0];
-    if (!message.message || message.key.fromMe) return;
-
-    const from = message.key.remoteJid;
-    const sender = message.key.participant || message.key.remoteJid;
-    const contentType = getContentType(message.message);
-    const deletedMsg = message.message[contentType];
-
-    // Only handle plain text messages
-    let text = "";
-
-    if (contentType === "conversation") {
-      text = deletedMsg;
-    } else if (contentType === "extendedTextMessage") {
-      text = deletedMsg.text || deletedMsg;
-    } else {
-      return; // Not a text message
-    }
-
-    // Send message to same chat indicating who deleted what
-    await malvin.sendMessage(from, {
-      text: `🛡️ *Anti-Delete*\n👤 *User:* @${sender.split('@')[0]}\n💬 *Deleted Message:* ${text}`,
-      mentions: [sender]
-    });
-  } catch (err) {
-    console.error("❌ Anti-delete error:", err);
-  }
-});
-
-   //work type
-    if (!isOwner && config.MODE === "private") return;
-    if (!isOwner && isGroup && config.MODE === "inbox") return;
-    if (!isOwner && !isGroup && config.MODE === "groups") return;
-
+    // =================== COMMAND HANDLER ===================
     const events = require("./command");
-    const cmdName = isCmd
-      ? body.slice(1).trim().split(" ")[0].toLowerCase()
-      : false;
+    const cmdName = isCmd ? body.slice(prefix.length).trim().split(" ")[0].toLowerCase() : false;
+
     if (isCmd) {
       const cmd =
-        events.commands.find((cmd) => cmd.pattern === cmdName) ||
-        events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName));
+        events.commands.find((c) => c.pattern === cmdName) ||
+        events.commands.find((c) => c.alias && c.alias.includes(cmdName));
       if (cmd) {
         if (cmd.react)
           malvin.sendMessage(from, { react: { text: cmd.react, key: mek.key } });
 
         try {
-          cmd.function(malvin, mek, m, {
+          cmd.function(malvin, mek, null, {
             from,
-            quoted,
+            quoted: mek,
             body,
             isCmd,
-            command,
-            args,
-            q,
-            isGroup,
-            sender,
-            senderNumber,
-            botNumber2,
-            botNumber,
-            pushname,
-            isMe,
-            isOwner,
-            groupMetadata,
-            groupName,
-            participants,
-            groupAdmins,
-            isBotAdmins,
-            isAdmins,
+            command: cmdName,
             reply,
           });
         } catch (e) {
@@ -341,127 +202,45 @@ malvin.ev.on('messages.delete', async (item) => {
         }
       }
     }
-    events.commands.map(async (command) => {
-      if (body && command.on === "body") {
-        command.function(malvin, mek, m, {
-          from,
-          l,
-          quoted,
-          body,
-          isCmd,
-          command,
-          args,
-          q,
-          isGroup,
-          sender,
-          senderNumber,
-          botNumber2,
-          botNumber,
-          pushname,
-          isMe,
-          isOwner,
-          groupMetadata,
-          groupName,
-          participants,
-          groupAdmins,
-          isBotAdmins,
-          isAdmins,
-          reply,
-        });
-      } else if (mek.q && command.on === "text") {
-        command.function(malvin, mek, m, {
-          from,
-          l,
-          quoted,
-          body,
-          isCmd,
-          command,
-          args,
-          q,
-          isGroup,
-          sender,
-          senderNumber,
-          botNumber2,
-          botNumber,
-          pushname,
-          isMe,
-          isOwner,
-          groupMetadata,
-          groupName,
-          participants,
-          groupAdmins,
-          isBotAdmins,
-          isAdmins,
-          reply,
-        });
-      } else if (
-        (command.on === "image" || command.on === "photo") &&
-        mek.type === "imageMessage"
-      ) {
-        command.function(malvin, mek, m, {
-          from,
-          l,
-          quoted,
-          body,
-          isCmd,
-          command,
-          args,
-          q,
-          isGroup,
-          sender,
-          senderNumber,
-          botNumber2,
-          botNumber,
-          pushname,
-          isMe,
-          isOwner,
-          groupMetadata,
-          groupName,
-          participants,
-          groupAdmins,
-          isBotAdmins,
-          isAdmins,
-          reply,
-        });
-      } else if (command.on === "sticker" && mek.type === "stickerMessage") {
-        command.function(malvin, mek, m, {
-          from,
-          l,
-          quoted,
-          body,
-          isCmd,
-          command,
-          args,
-          q,
-          isGroup,
-          sender,
-          senderNumber,
-          botNumber2,
-          botNumber,
-          pushname,
-          isMe,
-          isOwner,
-          groupMetadata,
-          groupName,
-          participants,
-          groupAdmins,
-          isBotAdmins,
-          isAdmins,
-          reply,
-        });
-      }
-    });
-    //============================================================================
+  });
+
+  // =================== ANTI DELETE ===================
+  malvin.ev.on("messages.delete", async (item) => {
+    try {
+      const message = item.messages[0];
+      if (!message.message || message.key.fromMe) return;
+
+      const from = message.key.remoteJid;
+      const sender = message.key.participant || from;
+      const contentType = getContentType(message.message);
+      const deletedMsg = message.message[contentType];
+
+      let text = "";
+      if (contentType === "conversation") text = deletedMsg;
+      else if (contentType === "extendedTextMessage")
+        text = deletedMsg.text || deletedMsg;
+      else return;
+
+      await malvin.sendMessage(from, {
+        text: `🛡️ *Anti-Delete*\n👤 *User:* @${sender.split("@")[0]}\n💬 *Deleted Message:* ${text}`,
+        mentions: [sender],
+      });
+    } catch (err) {
+      console.error("Anti-delete error:", err);
+    }
   });
 }
 
+// =================== EXPRESS SERVER ===================
 app.get("/", (req, res) => {
-  res.send("hey, 𝗠𝗔𝗟𝗨 𝗫𝗗 started✅");
+  res.send("hey, started✅");
 });
+
 app.listen(port, () =>
   console.log(`Server listening on port http://localhost:${port}`)
 );
 
+// =================== START BOT ===================
 setTimeout(() => {
   connectToWA();
 }, 4000);
