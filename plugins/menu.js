@@ -11,7 +11,7 @@ cmd({
   alias: ["allmenu", "help"],  
   desc: "Show command menu",  
   category: "main",  
-  fromMe: true,          // ✅ Inbox messages reply  
+  fromMe: false,          // ✅ Inbox messages reply  
   group: true,            // ✅ Group messages reply  
   filename: __filename  
 }, async (conn, mek, m, { from, quoted, pushname, reply }) => {  
