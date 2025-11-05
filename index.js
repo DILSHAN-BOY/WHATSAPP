@@ -203,9 +203,6 @@ if(!isOwner && isGroup && config.MODE === "groups") return
 //======================================================
 
 
-
-
-
 const events = require('./command');
 
 // WhatsApp messages listener
@@ -281,7 +278,7 @@ conn.ev.on('messages.upsert', async (mek) => {
       command.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
     }
   });
-}); // <-- closes messages.upsert listener
+}); // <-- this closes the conn.ev.on('messages.upsert') properly
 
 // Express server
 app.get("/", (req, res) => res.send("HEY, bot STARTED ✅"));
