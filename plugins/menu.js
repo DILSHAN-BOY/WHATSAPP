@@ -569,4 +569,3 @@ const messageID = sentMsg.key.id;
         }
     }
 });
-          });
