@@ -41,8 +41,10 @@ const {
   const os = require('os')
   const Crypto = require('crypto')
   const path = require('path')
-  const prefix = config.PREFIX
-  
+
+  const connectDB = require('./lib/mongodb');
+connectDB();
+
   const ownerNumber = ['94772257877']
   
   const tempDir = path.join(os.tmpdir(), 'cache-temp')
@@ -65,13 +67,13 @@ const {
   setInterval(clearTempDir, 5 * 60 * 1000);
   
   //===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
+if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
 if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-const sessdata = config.SESSION_ID.replace("IK~", '');
+const sessdata = config.SESSION_ID.replace("suho~", '');
 const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
 filer.download((err, data) => {
 if(err) throw err
-fs.writeFile(__dirname + '/sessions/creds.json', data, () => {
+fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
 console.log("Session downloaded ✅")
 })})}
 
@@ -82,8 +84,11 @@ const port = process.env.PORT || 9090;
   //=============================================
   
   async function connectToWA() {
-  console.log("Connecting to WhatsApp ⏳️...");
-  const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
+	  const { readEnv } = require('./lib/database');
+  const dbConfig = await readEnv();
+  const prefix = dbConfig.PREFIX || '.';
+  console.log("Connecting to WhatsApp 😵‍💫...");
+  const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
   var { version } = await fetchLatestBaileysVersion()
   
   const conn = makeWASocket({
