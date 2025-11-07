@@ -97,7 +97,7 @@ cmd({
 ⋘──────────────────────────────⋙`;
 
     await conn.sendMessage(from, {
-      image: { url: "https://files.catbox.moe/4kux2y.jpg" }, // <-- replace with your image URL
+      image: { url: config.MENU_IMAGE_URL }
       caption: status
     }, { quoted: mek });
 
@@ -200,7 +200,7 @@ cmd({
 > *© 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 ${botName}*`;
 
     await conn.sendMessage(from, {
-      image: { url: "https://files.catbox.moe/4kux2y.jpg" },
+      image: { url: config.MENU_IMAGE_URL },
       caption
     }, { quoted: mek });
   } catch (e) {
@@ -208,57 +208,83 @@ cmd({
   }
 });
 
-
 cmd({
-    pattern: "setting",
-    alias: ["setmenu", "configmenu"],
-    desc: "Show bot settings menu",
-    category: "menu",
-    react: "⚙️",
-    filename: __filename
+  pattern: "setting",
+  alias: ["setmenu", "configmenu"],
+  desc: "Show bot settings menu",
+  category: "main",
+  react: "⚙️",
+  filename: __filename
 }, async (conn, mek, m, { from, reply, isCreator }) => {
   try {
-    const config = await readEnv();
-    const prefix = config.PREFIX || ".";
-    const owner = config.OWNER_NAME || "Shashika Dilshan";
-    const botName = config.BOT_NAME || "AGNI";
+    if (!isCreator) return reply("📛 *Only Owner Can Access Settings!*");
 
-    if (!isCreator) return reply("*📛 Only the owner can use this menu!*");
+    const c = await readEnv();
 
-    const menuText = `
-*🛠️ BOT SETTINGS MENU 🛠️*
+    const ON = (x) => x === "true" ? "✅ ON" : "❌ OFF";
 
-╭──────────●●►
-│◈ *PREFIX:* ${config.PREFIX}
-│◈ *MODE:* ${config.MODE}
-│◈ *AUTO STICKER:* ${config.AUTO_STICKER === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *AUTO SEEN STATUS:* ${config.AUTO_STATUS_SEEN === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *AUTO LIKE STATUS:* ${config.AUTO_STATUS_REACT === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *AUTO REACT:* ${config.AUTO_REACT === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *READ MESSAGE:* ${config.READ_MESSAGE === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *ALWAYS ONLINE:* ${config.ALWAYS_ONLINE === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *READ CMD:* ${config.READ_CMD === "true" ? "✅ ON" : "❌ OFF"}
-│◈ *ANTI DELETE:* ${config.ANTI_DELETE === "true" ? "✅ ON" : "❌ OFF"}
-╰──────────●●►
+    const menu = `
+┏━━━〔 *⚙️ ${c.BOT_NAME || "AGNI"} SETTINGS MENU* 〕━━━┓
 
-╭──────────●●►
-│◈🛠️ *USAGE GUIDE:*
-│◈ • _.antidelete on/off_
-│◈ • _.auto-react on/off_
-│◈ • _.read-message on/off_
-│◈ • _.status-reply on/off_
-│◈ • _.always-online on/off_
-│◈ • _.auto-seen on/off_
-│◈ • _.status-react on/off_
-│◈ • _.mode public/private/groups_
-│◈ • _.setprefix !_
-╰──────────●●►
+┃ 🏷 *PREFIX:* ${c.PREFIX}
+┃ 🔮 *MODE:* ${c.MODE}
+┃ 🗣 *LANGUAGE:* ${c.LANGUAGE}
 
-> *© 𝙿𝙾𝚆𝙴𝚁𝙴𝙳 𝙱𝚈 ${botName}*`;
+┃─────────────
+┃ 🤖 *BOT FEATURES*
+┃ • AUTO STICKER: ${ON(c.AUTO_STICKER)}
+┃ • AUTO VOICE: ${ON(c.AUTO_VOICE)}
+┃ • AUTO REPLY: ${ON(c.AUTO_REPLY)}
+┃ • AUTO TIMER: ${ON(c.AUTO_TIMER)}
+┃ • HEART REACT: ${ON(c.HEART_REACT)}
+┃ • OWNER REACT: ${ON(c.OWNER_REACT)}
+┃ • AUTO REACT (chat): ${ON(c.AUTO_REACT)}
+┃ • AUTO REACT (status): ${ON(c.AUTO_REACT_STATUS)}
+┃ • AUTO STATUS READ: ${ON(c.AUTO_READ_STATUS)}
 
-    await reply(menuText);
+┃─────────────
+┃ 🧠 *ANTI SYSTEM*
+┃ • ANTI DELETE: ${ON(c.ANTI_DELETE)}
+┃ • ANTI VIEW ONCE: ${ON(c.ANTI_VIEW_ONCE)}
+┃ • ANTI BAD WORD: ${ON(c.ANTI_BAD_WORD)}
+┃ • ANTI LINK GROUP: ${ON(c.ANTI_LINK)}
+┃ • ANTI LINK DM: ${ON(c.INBOX_ANTILINK)}
+┃ • INBOX BLOCK: ${ON(c.INBOX_BLOCK)}
+┃ • ANTI BOT: ${ON(c.ANTI_BOT)}
+
+┃─────────────
+┃ ⭐ *STATUS CONTROL*
+┃ • ALWAYS ONLINE: ${ON(c.ALWAYS_ONLINE)}
+┃ • READ MESSAGE: ${ON(c.READ_MESSAGE)}
+┃ • FAKE RECORDING: ${ON(c.FAKE_RECORDING)}
+┃ • AUTO TYPING: ${ON(c.AUTO_TYPING)}
+
+┃─────────────
+┃ 🎧 *AUTO FEATURES*
+┃ • AUTO TIKTOK: ${ON(c.AUTO_TIKTOK)}
+┃ • AUTO NEWS: ${ON(c.AUTO_NEWS_ENABLED)}
+┃ • SEND FIRST NEWS: ${ON(c.SEND_START_NEWS)}
+
+┃─────────────
+┃ 🎨 *MENU CUSTOMIZATION*
+┃ • BOT NAME: ${c.BOT_NAME}
+┃ • OWNER NAME: ${c.OWNER_NAME}
+┃ • OWNER EMOJI: ${c.OWNER_EMOJI}
+┃ • MENU IMAGE: ${c.MENU_IMAGE_URL ? "🖼 SET" : "⚠️ NOT SET"}
+┃ • MENU AUDIO: ${c.MENU_AUDIO_URL ? "🎵 SET" : "⚠️ NOT SET"}
+┃ • ALIVE MESSAGE: ${c.ALIVE_MSG}
+
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+🧾 *Usage:* 
+> .set <setting_name> on/off
+> Example: *.set auto-sticker on*
+> Example: *.set anti-delete off*
+`;
+
+    await reply(menu);
 
   } catch (e) {
-    reply(`⚠️ Error: ${e.message}`);
+    reply("⚠️ Error: " + e.message);
   }
 });
