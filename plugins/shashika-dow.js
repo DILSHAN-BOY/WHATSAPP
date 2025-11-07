@@ -10,7 +10,6 @@ const axios = require("axios").create({
 const cheerio = require("cheerio");
 const { cmd } = require("../command");
 const { readEnv } = require('../lib/database');
-const { readEnv } = require('../lib/database');
 const API_URL = "https://facebook-downloader.apis-bj-devs.workers.dev/"; // Current API URL
 const api = `https://nethu-api-ashy.vercel.app`;
 
@@ -78,10 +77,10 @@ cmd(
       }
 
       const videoData = {
-        ...response.data.data,
-        poweredBy: *${botName}*,
-        status: apiStatus
-      };
+  ...response.data.data,
+  poweredBy: `*${botName}*`,
+  status: apiStatus
+};
 
       console.log("Video Data:", JSON.stringify(videoData, null, 2));
 
@@ -104,7 +103,7 @@ cmd(
           caption += `🌩️ Quality: ${videoData.quality}\n`;
         }
 
-        caption += `${botName}`;
+        caption: `*${botName}*`,
 
         if (videoData.thumbnail) {
           await robin.sendMessage(
@@ -499,7 +498,7 @@ cmd(
             mimetype: safe(dl.mimetype, "application/octet-stream"),
             fileName: safe(dl.fileName, "gdrive_file"),
           },
-          caption: *${botName}*,
+          caption: `*${botName}*`,
         },
         { quoted: mek }
       );
