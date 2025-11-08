@@ -96,6 +96,7 @@ try {
     ]);
 } catch (e) {
     console.log('Menu send error:', e);
+    // Use the same variable, don't redeclare
     sentMsg = await conn.sendMessage(
         from,
         { text: menuCaption, contextInfo: contextInfo },
