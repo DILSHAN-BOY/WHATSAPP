@@ -798,32 +798,41 @@ for (const command of events.commands) {
             );
         };
 
-        // Status aka brio
-        conn.setStatus = status => {
-            conn.query({
-                tag: 'iq',
-                attrs: {
-                    to: '@s.whatsapp.net',
-                    type: 'set',
-                    xmlns: 'status',
-                },
-                content: [
-                    {
-                        tag: 'status',
-                        attrs: {},
-                        content: Buffer.from(status, 'utf-8'),
-                    },
-                ],
-            });
-            return status;
-        };
-    conn.serializeM = mek => sms(conn, mek, store);
-  }
-  
-  app.get("/", (req, res) => {
-  res.send(" STARTED ✅");
+        // ================== STATUS FUNCTION ==================
+conn.setStatus = (status) => {
+  conn.query({
+    tag: 'iq',
+    attrs: {
+      to: '@s.whatsapp.net',
+      type: 'set',
+      xmlns: 'status',
+    },
+    content: [
+      {
+        tag: 'status',
+        attrs: {},
+        content: Buffer.from(status, 'utf-8'),
+      },
+    ],
   });
-  app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
-  setTimeout(() => {
-  connectToWA()
-  }, 4000);
+  return status;
+};
+
+// Serialize messages
+conn.serializeM = (mek) => sms(conn, mek, store);
+
+// ================== EXPRESS SERVER ==================
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("STARTED ✅");
+});
+
+app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));
+
+// ================== CONNECT TO WHATSAPP ==================
+setTimeout(() => {
+  connectToWA(); // Make sure connectToWA is defined earlier in your code
+}, 4000);
