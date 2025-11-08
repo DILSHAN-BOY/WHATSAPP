@@ -43,7 +43,6 @@
     "wa_set_pkg": "^1.0.5",
     "wa-sticker-formatter": "^4.4.4",
     "adm-zip": "^0.5.16",
-    "jimp": "^0.22.12",
     "hirunews-scrap": "^1.0.0",
     "@sl-code-lords/esana-news": "^1.0.0",
     "rss-parser": "^3.13.0",
