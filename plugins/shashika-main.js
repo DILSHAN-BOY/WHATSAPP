@@ -250,12 +250,13 @@ cmd({
 ┃─────────────
 ┃ 🧠 *ANTI SYSTEM*
 ┃ • ANTI DELETE: ${ON(c.ANTI_DELETE)}
+┃ • ANTI DELETE PATH: ${c.ANTI_DEL_PATH}
 ┃ • ANTI VIEW ONCE: ${ON(c.ANTI_VIEW_ONCE)}
 ┃ • ANTI BAD WORD: ${ON(c.ANTI_BAD_WORD)}
 ┃ • ANTI LINK GROUP: ${ON(c.ANTI_LINK)}
 ┃ • ANTI LINK DM: ${ON(c.INBOX_ANTILINK)}
 ┃ • INBOX BLOCK: ${ON(c.INBOX_BLOCK)}
-┃ • ANTI BOT: ${ON(c.ANTI_BOT)}
+┃ • ANTI VV: ${ON(c.ANTI_VV)}
 
 ┃─────────────
 ┃ ⭐ *STATUS CONTROL*
