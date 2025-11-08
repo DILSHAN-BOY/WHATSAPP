@@ -87,8 +87,9 @@ const sentMsg =await conn.sendMessage(from, { image: { url: menuImg }, caption: 
       ptt: true
     }, { quoted: mek });
 
-// Try sending menu image with timeout
-let sentMsg;
+// Remove the 'let' if it's already declared above
+// let sentMsg;
+
 try {
     sentMsg = await Promise.race([
         sendMenuImage(),
