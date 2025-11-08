@@ -77,6 +77,8 @@ cmd({
     const config = await readEnv();
     const owner = config.OWNER_NAME || "Shashika Dilshan";
     const botName = config.BOT_NAME || "AGNI";
+    const developerNumber = config.DEV_NUM || "94772469026";
+    const developerName = config.DEV_NAME || "shashika dilshan";
     const mem = getMemoryUsage();
     const uptime = formatUptime(process.uptime());
     const platform = `${os.type()} ${os.arch()} (${os.platform()})`;
@@ -94,6 +96,7 @@ cmd({
 🔋 Status      : Online 24/7
 🆚 Version     : ${pkg.version}
 👤 Owner       : ${owner}
+👾 developer   : ${developerNumber},${developerName}
 ⋘──────────────────────────────⋙`;
 
     await conn.sendMessage(from, {
@@ -220,6 +223,8 @@ cmd({
     if (!isCreator) return reply("📛 *Only Owner Can Access Settings!*");
 
     const c = await readEnv();
+    const menuImg = config.MAIN_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";
+    const menuAudio = config.MENU_AUDIO_URL || "https://files.catbox.moe/sp4tb9.ogg";
 
     const ON = (x) => x === "true" ? "✅ ON" : "❌ OFF";
 
@@ -269,10 +274,16 @@ cmd({
 ┃ 🎨 *MENU CUSTOMIZATION*
 ┃ • BOT NAME: ${c.BOT_NAME}
 ┃ • OWNER NAME: ${c.OWNER_NAME}
+┃ • OWNER NUMBER: ${c.OWNER_NUM}
 ┃ • OWNER EMOJI: ${c.OWNER_EMOJI}
+┃ • DEVELOPER NUMBER: ${c.DEV_NUM}
+┃ • DEVELOPER NAME: ${c.DEV_NAME}
 ┃ • MENU IMAGE: ${c.MENU_IMAGE_URL ? "🖼 SET" : "⚠️ NOT SET"}
+┃ • MAIN IMAGE: ${c.MAIN_IMAGE_URL ? "🖼 SET" : "⚠️ NOT SET"}
+┃ • ALIVE IMAGE: ${c.ALIVE_IMAGE_URL ? "🖼 SET" : "⚠️ NOT SET"}
 ┃ • MENU AUDIO: ${c.MENU_AUDIO_URL ? "🎵 SET" : "⚠️ NOT SET"}
 ┃ • ALIVE MESSAGE: ${c.ALIVE_MSG}
+┃ • CHANNELS: ${c.CHANNELS ? "🖼 SET" : "⚠️ NOT SET"}
 
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
@@ -281,6 +292,13 @@ cmd({
 > Example: *.set auto-sticker on*
 > Example: *.set anti-delete off*
 `;
+    await conn.sendMessage(from, { image: { url: menuImg }, caption: desc }, { quoted: mek});
+    await conn.sendMessage(from, {
+      audio: { url: menuAudio },
+      mimetype: 'audio/ogg',
+      ptt: true
+    }, { quoted: mek });
+                  
 
     await reply(menu);
 
