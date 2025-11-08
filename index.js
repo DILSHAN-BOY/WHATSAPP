@@ -247,8 +247,7 @@ if (isCreator && mek.text && mek.text.startsWith('%')) {
     }
 			 }
 	  
-	  return;
-					}
+	
 					try {
 						let resultTest = eval(code);
 						if (typeof resultTest === 'object')
