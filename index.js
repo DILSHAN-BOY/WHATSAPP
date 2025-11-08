@@ -313,39 +313,74 @@ if (!isOwner && config.MODE === "private") return; // Only owner can use in priv
 if (!isOwner && isGroup && config.MODE === "inbox") return; // Block group messages if mode is inbox
 if (!isOwner && !isGroup && config.MODE === "groups") return; // Block private messages if mode is groups
 
-	  // take commands 
-  const events = require('./command')
-  const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
-  if (isCmd) {
-  const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
+// take commands 
+const events = require('./command')
+const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
+
+if (isCmd) {
+  const cmd = events.commands.find(
+    (cmd) => cmd.pattern === cmdName
+  ) || events.commands.find(
+    (cmd) => cmd.alias && cmd.alias.includes(cmdName)
+  );
+
   if (cmd) {
-  if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key }})
-  
+    if (cmd.react) {
+      conn.sendMessage(from, { react: { text: cmd.react, key: mek.key } });
+    }
+
+    try {
+      await cmd.function(conn, mek, m, {
+        from, quoted, body, isCmd, command, args, q, text, 
+        isGroup, sender, senderNumber, botNumber2, botNumber, 
+        pushname, isMe, isOwner, isCreator, groupMetadata, 
+        groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply
+      });
+    } catch (e) {
+      console.error("[PLUGIN ERROR] " + e);
+    }
+  }
+}
+
+// run "on" type commands
+for (const command of events.commands) {
   try {
-  cmd.function(conn, mek, m,{from, quoted, body, isCmd, command, args, q, text, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, isCreator, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply});
-  } catch (e) {
-  console.error("[PLUGIN ERROR] " + e);
+    if (body && command.on === "body") {
+      await command.function(conn, mek, m, {
+        from, l, quoted, body, isCmd, command, args, q, text, 
+        isGroup, sender, senderNumber, botNumber2, botNumber, 
+        pushname, isMe, isOwner, isCreator, groupMetadata, 
+        groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply
+      });
+    } else if (mek.q && command.on === "text") {
+      await command.function(conn, mek, m, {
+        from, l, quoted, body, isCmd, command, args, q, text, 
+        isGroup, sender, senderNumber, botNumber2, botNumber, 
+        pushname, isMe, isOwner, isCreator, groupMetadata, 
+        groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply
+      });
+    } else if (
+      (command.on === "image" || command.on === "photo") &&
+      mek.type === "imageMessage"
+    ) {
+      await command.function(conn, mek, m, {
+        from, l, quoted, body, isCmd, command, args, q, text, 
+        isGroup, sender, senderNumber, botNumber2, botNumber, 
+        pushname, isMe, isOwner, isCreator, groupMetadata, 
+        groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply
+      });
+    } else if (command.on === "sticker" && mek.type === "stickerMessage") {
+      await command.function(conn, mek, m, {
+        from, l, quoted, body, isCmd, command, args, q, text, 
+        isGroup, sender, senderNumber, botNumber2, botNumber, 
+        pushname, isMe, isOwner, isCreator, groupMetadata, 
+        groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply
+      });
+    }
+  } catch (err) {
+    console.error("[PLUGIN ERROR] " + err);
   }
-  }
-  }
-  events.commands.map(async(command) => {
-  if (body && command.on === "body") {
-  command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, text, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, isCreator, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-  } else if (mek.q && command.on === "text") {
-  command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, text, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, isCreator, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-  } else if (
-  (command.on === "image" || command.on === "photo") &&
-  mek.type === "imageMessage"
-  ) {
-  command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, text, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, isCreator, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-  } else if (
-  command.on === "sticker" &&
-  mek.type === "stickerMessage"
-  ) {
-  command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, text, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, isCreator, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-  }});
-  
-  });
+	}
     //===================================================   
     conn.decodeJid = jid => {
       if (!jid) return jid;
