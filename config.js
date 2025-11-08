@@ -13,7 +13,7 @@ OWNER_NAME: process.env.OWNER_NAME || "𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢
 MODE: process.env.MODE || "public",
 PREFIX: process.env.PREFIX || ".",
 version: process.env.version || "1.0.0",
-OWNER_NUM: process.env.OWNER_NUM || "94772469026"
+OWNER_NUM: process.env.OWNER_NUM || "94772469026",
 AUTO_STATUS_SEEN: process.env.AUTO_STATUS_SEEN || "true",
 AUTO_STATUS_REPLY: process.env.AUTO_STATUS_REPLY || "false",
 AUTO_STATUS_REACT: process.env.AUTO_STATUS_REACT || "true",
