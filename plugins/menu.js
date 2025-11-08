@@ -117,7 +117,7 @@ const messageID = sentMsg.key.id;
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              const sentMsg =await conn.sendMessage(from, { 
+              sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['1'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -130,7 +130,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: © ${botName}*`,
-                const sentMsg =await conn.sendMessage(from, { 
+                sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['2'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -143,7 +143,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              const sentMsg =await conn.sendMessage(from, { 
+              sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['3'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -157,7 +157,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              const sentMsg =await conn.sendMessage(from, { 
+              sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['4'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -171,7 +171,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              const sentMsg =await conn.sendMessage(from, { 
+              sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['5'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -185,7 +185,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-             const sentMsg = await conn.sendMessage(from, { 
+             sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['6'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -199,7 +199,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              const sentMsg =await conn.sendMessage(from, { 
+              sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['7'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -213,7 +213,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-             const sentMsg = await conn.sendMessage(from, { 
+             sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['8'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -227,7 +227,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              const sentMsg =await conn.sendMessage(from, { 
+              sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['9'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
@@ -243,7 +243,7 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-             const sentMsg = await conn.sendMessage(from, { 
+             sentMsg = await conn.sendMessage(from, { 
     image: { url: menuImg }, 
     caption: menuData['10'].content, // menuData object එකේ proper content එක
 }, { quoted: mek });
