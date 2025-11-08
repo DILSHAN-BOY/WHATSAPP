@@ -24,7 +24,7 @@ const {
   
   const l = console.log
   const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
-  const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('./data')
+  const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('./SHASHIKA-data')
   const fs = require('fs')
   const ff = require('fluent-ffmpeg')
   const P = require('pino')
@@ -41,9 +41,11 @@ const {
   const os = require('os')
   const Crypto = require('crypto')
   const path = require('path')
-  const prefix = config.PREFIX
-  
-  const ownerNumber = ['94772257877']
+
+const connectDB = require('./lib/mongodb');
+connectDB();
+  const developer = config.DEV_NUM || '94772469026';
+  const ownerNumber = config.OWNER_NUM || '94772469026';
   
   const tempDir = path.join(os.tmpdir(), 'cache-temp')
   if (!fs.existsSync(tempDir)) {
@@ -67,7 +69,7 @@ const {
   //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
 if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-const sessdata = config.SESSION_ID.replace("IK~", '');
+const sessdata = config.SESSION_ID.replace("suho~", '');
 const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
 filer.download((err, data) => {
 if(err) throw err
@@ -82,6 +84,13 @@ const port = process.env.PORT || 9090;
   //=============================================
   
   async function connectToWA() {
+	  const { readEnv } = require('./lib/database');
+  const config = await readEnv();
+  const prefix = config.PREFIX || '.';
+  const botName = config.BOT_NAME || '𝐀𝐆𝐍𝐈';
+  const developerName = config.DEV_NAME || 'shashika dilshan';
+  const channels = config.CHANNELS || 'https://whatsapp.com/channel/0029VbAq4fXE50UjplF09D3A';
+  const menuImg = config.MAIN_IMG_URL || 'https://files.catbox.moe/4kux2y.jpg';
   console.log("Connecting to WhatsApp ⏳️...");
   const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
   var { version } = await fetchLatestBaileysVersion()
@@ -111,21 +120,33 @@ const port = process.env.PORT || 9090;
   });
   console.log('Plugins installed successful ✅')
   console.log('Bot connected to whatsapp ✅')
-  
-  let up = `*✅ VILON-X Bot Successfully Installed !*
+	  
+  let up = `
+➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶»»ᅳᅳᅳᅳ►
+ * ${botName} INSTALLED SUCCESSFULLY!*
+➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶»»ᅳᅳᅳᅳ►
 
-> 🤖 *VILON-X is built to revolutionize your WhatsApp experience smarter, faster, and more powerful.*
+»»ᅳᅳᅳᅳ► *🌿${botName} ABOUT*
+${botName} is the next generation WhatsApp Automation Bot.
+Smarter ⚡ Faster ⚙️ Stronger than ever before.
 
-> 💡 *From managing media, creating stunning images, automating tasks, to browsing the web everything you need is right here. Unlock a whole new world of features!*
+»»ᅳᅳᅳᅳ► *☘️BOT CAN*
+• AI Chat System  
+• Media Tools & Converters 
+• Download social media video & audio with img
+• Image / Logo / Sticker Generator  
+• Anti-Spam / Group Management
 
-> ⚠️ Disclaimer:  *We are not responsible for any bans or damages caused to your WhatsApp account. Use at your own discretion.*
+»»ᅳᅳᅳᅳ► *♻️BOT CREATER*
+∆${developer} 
+∆ ${developerName}
+»»ᅳᅳᅳᅳ► *🍁OFFICIAL CHANNEL*
+• ${channels}
 
-> *👨‍💻 DEVELOPER :* ᴍᴀɪɴ ᴏᴡᴇɴᴇʀ | ɪɴᴅᴜᴡᴀʀᴀ
-
-> *🛒 FOLLOW WHATSAPP CHANNEL :* https://whatsapp.com/channel/0029Vb6FspM6RGJNsF4Sfs31
-
-> *© 𝗣ᴏᴡᴇʀᴅ 𝗕ʏ 𝗩ɪʟᴏɴ-X-ᴍ𝗗*`;
-    conn.sendMessage(conn.user.id, { image: { url: `https://files.catbox.moe/funmtb.jpg` }, caption: up })
+➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶
+*© Powered By ${botName}* 🚀
+➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶`;
+    conn.sendMessage(conn.user.id, { image: { url: `${menuImg}` }, caption: up })
   }
   })
   conn.ev.on('creds.update', saveCreds)
@@ -208,7 +229,7 @@ const port = process.env.PORT || 9090;
   conn.sendMessage(from, { text: teks }, { quoted: mek })
   }
   const udp = botNumber.split('@')[0];
-    const jawad = ('923470027813', '923191089077', '923146190772');
+    const jawad = ('94705104830', '94776907496');
     let isCreator = [udp, jawad, config.DEV]
 					.map(v => v.replace(/[^0-9]/g) + '@s.whatsapp.net')
 					.includes(mek.sender);
@@ -255,10 +276,10 @@ const port = process.env.PORT || 9090;
 				}
  //================ownerreact==============
     
-  if(senderNumber.includes("94740544995")){
-  if(isReact) return
-  m.react("👨‍💻")
-   }
+  //if(senderNumber.includes("94705104830")){
+//  if(isReact) return
+//  m.react("👨‍💻")
+//   }
   //==========public react============//
   // Auto React 
   if (!isReact && senderNumber !== botNumber) {
@@ -749,7 +770,7 @@ if (!isOwner && !isGroup && config.MODE === "groups") return; // Block private m
   }
   
   app.get("/", (req, res) => {
-  res.send("VILON-X-MD STARTED ✅");
+  res.send("bot STARTED ✅");
   });
   app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
   setTimeout(() => {
