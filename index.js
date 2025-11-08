@@ -42,10 +42,12 @@ const {
   const Crypto = require('crypto')
   const path = require('path')
 
+
+  
+  const ownerNumber = ['94772469026']
 const connectDB = require('./lib/mongodb');
 connectDB();
-  const developer = config.DEV_NUM || '94772469026';
-  const ownerNumber = config.OWNER_NUM || '94772469026';
+  
   
   const tempDir = path.join(os.tmpdir(), 'cache-temp')
   if (!fs.existsSync(tempDir)) {
@@ -87,10 +89,7 @@ const port = process.env.PORT || 9090;
 	  const { readEnv } = require('./lib/database');
   const config = await readEnv();
   const prefix = config.PREFIX || '.';
-  const botName = config.BOT_NAME || '𝐀𝐆𝐍𝐈';
-  const developerName = config.DEV_NAME || 'shashika dilshan';
-  const channels = config.CHANNELS || 'https://whatsapp.com/channel/0029VbAq4fXE50UjplF09D3A';
-  const menuImg = config.MAIN_IMG_URL || 'https://files.catbox.moe/4kux2y.jpg';
+  
   console.log("Connecting to WhatsApp ⏳️...");
   const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
   var { version } = await fetchLatestBaileysVersion()
@@ -123,11 +122,11 @@ const port = process.env.PORT || 9090;
 	  
   let up = `
 ➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶»»ᅳᅳᅳᅳ►
- * ${botName} INSTALLED SUCCESSFULLY!*
+ *INSTALLED SUCCESSFULLY!*
 ➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶»»ᅳᅳᅳᅳ►
 
-»»ᅳᅳᅳᅳ► *🌿${botName} ABOUT*
-${botName} is the next generation WhatsApp Automation Bot.
+»»ᅳᅳᅳᅳ► *ABOUT*
+ is the next generation WhatsApp Automation Bot.
 Smarter ⚡ Faster ⚙️ Stronger than ever before.
 
 »»ᅳᅳᅳᅳ► *☘️BOT CAN*
@@ -138,15 +137,12 @@ Smarter ⚡ Faster ⚙️ Stronger than ever before.
 • Anti-Spam / Group Management
 
 »»ᅳᅳᅳᅳ► *♻️BOT CREATER*
-∆${developer} 
-∆ ${developerName}
 »»ᅳᅳᅳᅳ► *🍁OFFICIAL CHANNEL*
-• ${channels}
 
 ➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶
-*© Powered By ${botName}* 🚀
+*© Powered By * 🚀
 ➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶`;
-    conn.sendMessage(conn.user.id, { image: { url: `${menuImg}` }, caption: up })
+    conn.sendMessage(conn.user.id, { image: { url: `https://files.catbox.moe/4kux2y.jpg` }, caption: up })
   }
   })
   conn.ev.on('creds.update', saveCreds)
