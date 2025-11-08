@@ -24,7 +24,7 @@ const {
   
   const l = console.log
   const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
-  const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('./data')
+  const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('../data')
   const fs = require('fs')
   const ff = require('fluent-ffmpeg')
   const P = require('pino')
@@ -44,8 +44,8 @@ const {
 
   const connectDB = require('./lib/mongodb');
 connectDB();
-  const developer = Config.DEV_NUM || '94772469026';
-  const ownerNumber = Config.OWNER_NUM || '94772469026';
+  const developer = config.DEV_NUM || '94772469026';
+  const ownerNumber = config.OWNER_NUM || '94772469026';
   
   const tempDir = path.join(os.tmpdir(), 'cache-temp')
   if (!fs.existsSync(tempDir)) {
@@ -85,12 +85,12 @@ const port = process.env.PORT || 9090;
   
   async function connectToWA() {
 	  const { readEnv } = require('./lib/database');
-  const Config = await readEnv();
-  const prefix = Config.PREFIX || '.';
-  const botName = Config.BOT_NAME || '𝐀𝐆𝐍𝐈';
-  const developerName = Config.DEV_NAME || 'shashika dilshan';
-  const channels = Config.CHANNELS || 'https://whatsapp.com/channel/0029VbAq4fXE50UjplF09D3A';
-  const menuImg = Config.MAIN_IMG_URL || 'https://files.catbox.moe/4kux2y.jpg';
+  const config = await readEnv();
+  const prefix = config.PREFIX || '.';
+  const botName = config.BOT_NAME || '𝐀𝐆𝐍𝐈';
+  const developerName = config.DEV_NAME || 'shashika dilshan';
+  const channels = config.CHANNELS || 'https://whatsapp.com/channel/0029VbAq4fXE50UjplF09D3A';
+  const menuImg = config.MAIN_IMG_URL || 'https://files.catbox.moe/4kux2y.jpg';
   console.log("Connecting to WhatsApp 😵‍💫...");
   const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
   var { version } = await fetchLatestBaileysVersion()
