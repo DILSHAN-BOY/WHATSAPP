@@ -103,7 +103,7 @@ cmd(
           caption += `🌩️ Quality: ${videoData.quality}\n`;
         }
 
-        caption: `*${botName}*`,
+        //caption: `*${botName}*`,
 
         if (videoData.thumbnail) {
           await robin.sendMessage(
@@ -194,8 +194,7 @@ const config = await readEnv();
 
       if (!sd && !hd) return reply("I couldn't find anything :(");
 
-      const caption = `* ${botName} *\n\n📝 ᴛɪᴛʟᴇ : Facebook video\n🔗 ᴜʀʟ : ${q}`;
-
+      const caption = `*${botName}*\n\n📝 Title : Facebook video\n🔗 URL : ${q}`;
       if (thumb && isHttpUrl(thumb)) {
         await conn.sendMessage(
           from,
