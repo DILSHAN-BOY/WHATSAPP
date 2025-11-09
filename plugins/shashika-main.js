@@ -100,7 +100,7 @@ cmd({
 ⋘──────────────────────────────⋙`;
 
     await conn.sendMessage(from, {
-      image: { url: config.MENU_IMAGE_URL }
+      image: { url: config.MENU_IMAGE_URL },
       caption: status
     }, { quoted: mek });
 
@@ -133,7 +133,7 @@ cmd({
 > *© ${botName}`;
 
     await conn.sendMessage(from, {
-      image: { url: "https://files.catbox.moe/x1cj4y.jpg" },
+      image: { url: config.MENU_IMAGE_URL },
       caption
     }, { quoted: mek });
 
