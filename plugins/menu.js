@@ -12,13 +12,12 @@ cmd({
     filename: __filename
 }, async (conn, mek, m, { from, reply, pushname }) => {
     try {
-      const config = await readEnv();
+         const config = await readEnv();
     const prefix = config.PREFIX || ".";
     const owner = config.OWNER_NAME || "Shashika Dilshan";
     const developerName = config.DEV_NAME || "SHASHIKA DILSHAN";
     const botName = config.BOT_NAME || "AGNI";
     const menuImg = config.MENU_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";  
-    const menuVid = config.MENU_VIDEO_URL || "https://files.catbox.moe/kjlx3l.mp4";
     const menuAudio = config.MENU_AUDIO_URL || "https://files.catbox.moe/sp4tb9.ogg";
 //=======system ====================   
   const user = pushname;
@@ -38,7 +37,7 @@ const totalRam = (require('os').totalmem() / 1024 / 1024).toFixed(0) + "MB";
         menu[c.category] += `│ ⬡ ${prefix}${c.pattern}\n`;  
       }  
     }  
-
+        
 
         const menuCaption = `
         
@@ -77,27 +76,38 @@ const contextInfo = {
     forwardingScore: 999,
     isForwarded: true
 };
-const sentMsg =await conn.sendMessage(from, { image: { url: menuImg }, caption: menuCaption }, { quoted: mek });
 
+// Function to send the main menu image
+const sendMenuImage = async () => {
+    try {
+        return await conn.sendMessage(
+            from,
+            {
+               image: { url: config.MENU_IMAGE_URL },
+                caption: menuCaption,
+                contextInfo: contextInfo
+            },
+            { quoted: mek }
+        );
+    } catch (e) {
+        console.log('Image send failed, falling back to text');
+        return await conn.sendMessage(
+            from,
+            { text: menuCaption, contextInfo: contextInfo },
+            { quoted: mek }
+        );
+    }
+};
 
-    // Send voice note separately
-    await conn.sendMessage(from, {
-      audio: { url: menuAudio },
-      mimetype: 'audio/ogg',
-      ptt: true
-    }, { quoted: mek });
-
-// Remove the 'let' if it's already declared above
-// let sentMsg;
-
+// Try sending menu image with timeout
+let sentMsg;
 try {
     sentMsg = await Promise.race([
         sendMenuImage(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Image send timeout')), 10000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Image send timeout')), 10000000))
     ]);
 } catch (e) {
     console.log('Menu send error:', e);
-    // Use the same variable, don't redeclare
     sentMsg = await conn.sendMessage(
         from,
         { text: menuCaption, contextInfo: contextInfo },
@@ -110,17 +120,14 @@ const messageID = sentMsg.key.id;
         // Menu data (Trimmed sample - you can keep all your sections)
         const menuData = {
             '1': {
-                title: "MAIN",
+                title: "🎀 *Main Menu*",
                 content: `☘️《《⚛*MAIN COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.main || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['1'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '2': {
                 title: "*🤖 Ai Menu*",
@@ -130,123 +137,88 @@ ${menu.ai || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: © ${botName}*`,
-                sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['2'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '3': {
                 title: "🎧 *Convert Menu*",
-                content: `☘️《《⚛*CONVERT COMMANDS*⚛》》
+                content: `♻️《《⚛*CONVERT COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.convert || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['3'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '4': {
                 title: "📥 *Download Menu*",
-                
-                content: `☘️《《⚛*DOWNLOAD COMMANDS*⚛》》
+                content: `🍃《《⚛*DOWNLOAD COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.download || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['4'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '5': {
                 title: "🔍 *Search Menu*",
-                
-                content: `☘️《《⚛*SEARCH COMMANDS*⚛》》
+                content: `🍂《《⚛*SEARCH COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.search || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['5'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '6': {
                 title: "👥 *Group Menu*",
-                
-                content: `☘️《《⚛*GROUP COMMANDS*⚛》》
+                content: `❤️‍🔥《《⚛*GROUP COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.group || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-             sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['6'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '7': {
                 title: "👑 *Owner Menu*",
-                
                 content: `☘️《《⚛*OWNER COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.owner || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['7'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '8': {
                 title: "🧰 *Tools Menu*",
-                
-                content: `☘️《《⚛*TOOLS COMMANDS*⚛》》
+                content: `🌱《《⚛*TOOLS COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.tools || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-             sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['8'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
             },
             '9': {
-                title: "📰 *other Menu*",
-                
-                content: `☘️《《⚛*OTHER COMMANDS*⚛》》
+                title: "📰 *Other Menu*",
+                content: `🌼《《⚛*OTHER COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.other || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-              sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['9'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
              },
             '10': {
-                title: "🤣 *anim & logo Menu*",
-                
-                content: `☘️《《⚛*ANIME & LOGO COMMANDS*⚛》》
+                title: "🤣 *Logo&Anime Menu*",
+                content: `🍁《《⚛*LOGO & ANIME COMMANDS*⚛》》
 𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.anime || '│ (No commands found)'}
-𖣔━━━━━━━━━━━━━━━𖣔
 │ ${menu.logo || '│ (No commands found)'}
 ┗━━━━━━━━━━━━━━━𖣔
 
 > *Powered by: ${botName}*`,
-             sentMsg = await conn.sendMessage(from, { 
-    image: { url: menuImg }, 
-    caption: menuData['10'].content, // menuData object එකේ proper content එක
-}, { quoted: mek });
+                image: true
                 
             }
 
@@ -275,7 +247,7 @@ ${menu.ai || '│ (No commands found)'}
                                 await conn.sendMessage(
                                     senderID,
                                     {
-                                        image: { url: 'https://files.catbox.moe/4kux2y.jpg' },
+                                        image: { url: config.MENU_IMAGE_URL },
                                         caption: selectedMenu.content,
                                         contextInfo: contextInfo
                                     },
@@ -304,7 +276,7 @@ ${menu.ai || '│ (No commands found)'}
                         await conn.sendMessage(
                             senderID,
                             {
-                                text: `❌ *Invalid Option!* ❌\n\nPlease reply with a number between 1–9.\n\n*Example:* Reply with "1" for Main Menu\n\n> *Powered by: © 𝚅𝙸𝙻𝙾𝙽-𝚇-𝙼𝙳*`,
+                                text: `❌ *Invalid Option!* ❌\n\nPlease reply with a number between 1–9.\n\n*Example:* Reply with "1" for Main Menu\n\n> *Powered by: © ${botName}*`,
                                 contextInfo: contextInfo
                             },
                             { quoted: receivedMsg }
@@ -328,7 +300,7 @@ ${menu.ai || '│ (No commands found)'}
         try {
             await conn.sendMessage(
                 from,
-                { text: `❌ Menu system is busy. Please try again later.\n\n> ${config.DESCRIPTION}` },
+                { text: `🛑something worn. Please try again later` },
                 { quoted: mek }
             );
         } catch (finalError) {
@@ -336,4 +308,4 @@ ${menu.ai || '│ (No commands found)'}
         }
     }
 });
-      
+        
