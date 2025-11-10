@@ -218,9 +218,9 @@ cmd({
   category: "main",
   react: "⚙️",
   filename: __filename
-}, async (conn, mek, m, { from, reply, isCreator }) => {
+}, async (conn, mek, m, { from, reply, isOwner }) => {
   try {
-    if (!isCreator) return reply("📛 *Only Owner Can Access Settings!*");
+    if (!isOwner) return reply("📛 *Only Owner Can Access Settings!*");
 
     const c = await readEnv();
     const menuImg = config.MAIN_IMAGE_URL || "https://files.catbox.moe/4kux2y.jpg";
