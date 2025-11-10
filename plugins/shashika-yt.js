@@ -1,103 +1,95 @@
 const { readEnv } = require('../lib/database');
 const { cmd } = require('../command');
+const axios = require("axios");
 const { ytsearch } = require('@dark-yasiya/yt-dl.js'); 
 
 // Define constants for the new API
 const API_BASE_URL = "https://sadiya-tech-apis.vercel.app/download/ytdl";
+const API_BASE_URL2 = "https://sadiya-tech-apis.vercel.app/download/ytdl";
 const API_KEY = "dinesh-api-key";
 
 // =================================================================
 // 🎵 Command: MP4 / Video Download (.mp4, .video, .ytv)
 // =================================================================
 
-cmd({ 
-    pattern: "mp4", 
-    alias: ["video", "ytv"], 
-    react: "🎥", 
-    desc: "Download Youtube video", 
-    category: "download", 
-    use: '.mp4 < Yt url or Name >', 
-    filename: __filename 
-}, async (conn, mek, m, { from, prefix, quoted, q, reply }) => { 
-    try { 
+cmd({
+  pattern: "mp4",
+  alias: ["video", "ytv"],
+  react: "🎥",
+  desc: "Download Youtube video",
+  category: "download",
+  use: '.mp4 < Yt url or Name >',
+  filename: __filename
+}, 
+async (conn, mek, m, { from, q, reply }) => {
+
+  try {
       const config = await readEnv();
       const owner = config.OWNER_NAME || "Shashika Dilshan";
       const botName = config.BOT_NAME || "AGNI";
-        if (!q) return await reply("*ENTER A Valid YT LINK OR NAME..*");
-        
-        // 1. Search YouTube
-        const yt = await ytsearch(q);
-        if (yt.results.length < 1) return reply("No results found!");
-        
-        let yts = yt.results[0];  
-        
-        // 2. Construct New MP4 API URL with format and API key
-        const apiUrl = `${API_BASE_URL}?url=${encodeURIComponent(yts.url)}&format=mp4&apikey=${API_KEY}`;
-        
-        // 3. Fetch data from the new API
-        let response = await fetch(apiUrl);
-        let apiData = await response.json();
-        
-        // Check API status
-        if (!apiData.status || apiData.status === false) {
-            console.error("API Error:", apiData);
-            return reply(`API Error: ${apiData.err || 'Unknown error'}`);
-        }
-        
-        // --- FINAL MP4 DATA EXTRACTION ---
-        const downloadUrl = apiData.result?.download || apiData.result?.video || apiData.download;
-        const thumbnail = apiData.result?.thumbnail || apiData.thumbnail || yts.thumbnail || '';
 
-        if (!downloadUrl) {
-             console.error("API Response Error (MP4 - Missing URL):", apiData);
-            return reply("Failed to fetch the video from the API. Download URL not found in response.");
-        }
-        
-        // --- Message Construction ---
-        let ytmsg = `
-╭─────────────────────◆
-│ ♻️ * ${botName}*  •  ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ
-╰─────────────────────◆
+      if (!API_KEY || API_KEY === "dinesh-api-key") 
+          return reply("⚠️ *SADIYA_API_KEY is missing!*");
 
-┌──┤ *🎬 Video Info*
-│
-│ ✦ *Title:* ${yts.title}
-│ ✦ *Duration:* ${yts.timestamp}
-│ ✦ *Views:* ${yts.views}
-│ ✦ *Channel:* ${yts.author.name}
-│ ✦ *Link:* ${yts.url}
-│
-└─────────────────────◆
+      if (!q) return reply("*Use:* .mp4 < YouTube Link / Song Name >");
+
+      // Search Video on YouTube
+      let yt = await ytsearch(q);
+      if (!yt.results || yt.results.length < 1) return reply("❌ No results found!");
+
+      let vid = yt.results[0];
+
+      // API Request
+      const apiUrl = `${API_BASE_URL2}?url=${encodeURIComponent(vid.url)}&format=360&apikey=${API_KEY}`;
+      const { data } = await axios.get(apiUrl);
+
+      if (!data.status) return reply("❌ API Error: " + (data.error || data.err));
+      
+      const d = data.result;
+
+      if (!d.download) return reply("❌ Couldn't get video download link!");
+
+      let caption = `
+╭──────────────────────◆
+│ 🎬 *${botName} - VIDEO DOWNLOADER*
+╰──────────────────────◆
+
+┌── *VIDEO INFO*
+│🔹 *Title:* ${vid.title}
+│🔹 *Duration:* ${vid.timestamp}
+│🔹 *Views:* ${vid.views}
+│🔹 *Channel:* ${vid.author.name}
+│🔹 *Link:* ${vid.url}
+└──────────────────────◆
 
 ⚡ *Powered By:* ${owner}
 `;
-        // 5. Send results 
-        
-        // Send video details with thumbnail
-        await conn.sendMessage(from, { 
-            image: { url: thumbnail }, 
-            caption: ytmsg 
-        }, { quoted: mek });
-        
-        // Send video file
-        await conn.sendMessage(from, { 
-            video: { url: downloadUrl }, 
-            mimetype: "video/mp4",
-            caption: `*${yts.title}*\n> *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${botName}*` 
-        }, { quoted: mek });
-        
-        // Send document file (optional)
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            fileName: `${yts.title}.mp4`, 
-            caption: `*${yts.title}*\n> *© ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${botName}*`
-        }, { quoted: mek });
 
-    } catch (e) {
-        console.error("MP4 Error:", e);
-        reply("An error occurred during video download. Please try again later.");
-    }
+      // Send Thumbnail with caption
+      await conn.sendMessage(from, { 
+        image: { url: d.thumbnail }, 
+        caption 
+      }, { quoted: mek });
+
+      // Send Video
+      await conn.sendMessage(from, { 
+        video: { url: d.download }, 
+        mimetype: "video/mp4",
+        caption: `🎥 *${vid.title}*\n\n> ✅ *Downloaded by ${botName}*`
+      }, { quoted: mek });
+
+      // Send Document Version
+      await conn.sendMessage(from, { 
+        document: { url: d.download }, 
+        mimetype: "video/mp4",
+        fileName: `${vid.title}.mp4`,
+        caption: `📦 *Document Version*\n> ✅ *${botName}*`
+      }, { quoted: mek });
+
+  } catch (err) {
+      console.log("MP4 Error:", err);
+      return reply("❌ Failed. API / Server may be busy.\nTry again later!");
+  }
 });  
        
 // =================================================================
