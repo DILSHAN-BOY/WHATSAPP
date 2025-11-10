@@ -8,7 +8,11 @@ const axios = require("axios").create({
   maxRedirects: 5,
 });
 const cheerio = require("cheerio");
+const fetch = require("node-fetch");
 const { cmd } = require("../command");
+const { fetchJson } = require("../lib/functions");
+const { igdl } = require("ruhend-scraper");
+const axios = require("axios");
 const { readEnv } = require('../lib/database');
 const API_URL = "https://facebook-downloader.apis-bj-devs.workers.dev/"; // Current API URL
 const api = `https://nethu-api-ashy.vercel.app`;
@@ -656,5 +660,621 @@ cmd({
   }
 });
 
+//==============
 
+cmd({
+  pattern: "tiktoksearch",
+  alias: ["tiktoks", "tiks"],
+  desc: "Search for TikTok videos using a query.",
+  react: '✅',
+  category: 'download',
+  filename: __filename
+}, async (conn, m, store, {
+  from,
+  args,
+  reply
+}) => {
+  if (!args[0]) {
+    return reply("🌸 What do you want to search on TikTok?\n\n*Usage Example:*\n.tiktoksearch <query>");
+  }
+
+  const query = args.join(" ");
+  await store.react('⌛');
+
+  try {
+    reply(`🔎 Searching TikTok for: *${query}*`);
+    
+    const response = await fetch(`https://apis-starlights-team.koyeb.app/starlight/tiktoksearch?text=${encodeURIComponent(query)}`);
+    const data = await response.json();
+
+    if (!data || !data.data || data.data.length === 0) {
+      await store.react('❌');
+      return reply("❌ No results found for your query. Please try with a different keyword.");
+    }
+
+    // Get up to 7 random results
+    const results = data.data.slice(0, 7).sort(() => Math.random() - 0.5);
+
+    for (const video of results) {
+      const message = `
+╔════════════════════╗
+║      🎵 TIKTOK VIDEO 🎵
+╚════════════════════╝
+
+🎬 *Title:* ${video.title}
+👤 *Author:* ${video.author || 'Unknown'}
+⏱️ *Duration:* ${video.duration || "Unknown"}
+🔗 *URL:* ${video.link}
+
+╭────────────────────╮
+│ ✦ Enjoy your video! 
+╰────────────────────╯
+`.trim();
+
+      if (video.nowm) {
+        await conn.sendMessage(from, {
+          video: { url: video.nowm },
+          caption: message
+        }, { quoted: m });
+      } else {
+        reply(`❌ Failed to retrieve video for *"${video.title}"*.`);
+      }
+    }
+
+    await store.react('✅');
+  } catch (error) {
+    console.error("Error in TikTokSearch command:", error);
+    await store.react('❌');
+    reply("❌ An error occurred while searching TikTok. Please try again later.");
+  }
+});
   
+cmd({
+    pattern: "ytpost",
+    alias: ["ytcommunity", "ytc"],
+    desc: "Download a YouTube community post",
+    category: "download",
+    react: "🎥",
+    filename: __filename
+},
+async (conn, mek, m, { from, args, q, reply, react }) => {
+    try {
+        if (!q) return reply("Please provide a YouTube community post URL.\nExample: `.ytpost <url>`");
+
+        const apiUrl = `https://api.siputzx.my.id/api/d/ytpost?url=${encodeURIComponent(q)}`;
+        const { data } = await axios.get(apiUrl);
+
+        if (!data.status || !data.data) {
+            await react("❌");
+            return reply("Failed to fetch the community post. Please check the URL.");
+        }
+
+        const post = data.data;
+        let caption = `📢 *YouTube Community Post* 📢\n\n` +
+                      `📜 *Content:* ${post.content}`;
+
+        if (post.images && post.images.length > 0) {
+            for (const img of post.images) {
+                await conn.sendMessage(from, { image: { url: img }, caption }, { quoted: mek });
+                caption = ""; // Only add caption once, images follow
+            }
+        } else {
+            await conn.sendMessage(from, { text: caption }, { quoted: mek });
+        }
+
+        await react("✅");
+    } catch (e) {
+        console.error("Error in ytpost command:", e);
+        await react("❌");
+        reply("An error occurred while fetching the YouTube community post.");
+    }
+});
+
+cmd({
+  pattern: "ig2",
+  alias: ["insta2", "Instagram2"],
+  desc: "To download Instagram videos.",
+  react: "🎥",
+  category: "download",
+  filename: __filename
+}, async (conn, m, store, { from, q, reply }) => {
+  try {
+    if (!q || !q.startsWith("http")) {
+      return reply("❌ Please provide a valid Instagram link.");
+    }
+
+    await conn.sendMessage(from, {
+      react: { text: "⏳", key: m.key }
+    });
+
+    const response = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/igdl?url=${q}`);
+    const data = response.data;
+
+    if (!data || data.status !== 200 || !data.downloadUrl) {
+      return reply("⚠️ Failed to fetch Instagram video. Please check the link and try again.");
+    }
+
+    await conn.sendMessage(from, {
+      video: { url: data.downloadUrl },
+      mimetype: "video/mp4",
+      caption: "📥 *Instagram Video Downloaded Successfully!*"
+    }, { quoted: m });
+
+  } catch (error) {
+    console.error("Error:", error);
+    reply("❌ An error occurred while processing your request. Please try again.");
+  }
+});
+
+
+// twitter-dl
+
+cmd({
+  pattern: "twitter",
+  alias: ["tweet", "twdl"],
+  desc: "Download Twitter videos",
+  category: "download",
+  filename: __filename
+}, async (conn, m, store, {
+  from,
+  quoted,
+  q,
+  reply
+}) => {
+  try {
+    const config = await readEnv();
+    const owner = config.OWNER_NAME || "Shashika Dilshan";
+    const botName = config.BOT_NAME || "AGNI";
+    if (!q || !q.startsWith("https://")) {
+      return conn.sendMessage(from, { text: "❌ Please provide a valid Twitter URL." }, { quoted: m });
+    }
+
+    await conn.sendMessage(from, {
+      react: { text: '⏳', key: m.key }
+    });
+
+    const response = await axios.get(`https://www.dark-yasiya-api.site/download/twitter?url=${q}`);
+    const data = response.data;
+
+    if (!data || !data.status || !data.result) {
+      return reply("⚠️ Failed to retrieve Twitter video. Please check the link and try again.");
+    }
+
+    const { desc, thumb, video_sd, video_hd } = data.result;
+
+    const caption = `
+╔═══════════════════════╗
+║     🐦 *${botName}* 🐦
+║    ⌬ TWITTER DOWNLOADER ⌬
+╚═══════════════════════╝
+
+📄 *Description:* ${desc || "No description"}
+
+╭───────────────•✧•───────────────╮
+│ 📹 *Download Options:*
+│ 1️⃣  SD Quality
+│ 2️⃣  HD Quality
+│
+│ 🎵 *Audio Options:*
+│ 3️⃣  Audio
+│ 4️⃣  Document
+│ 5️⃣  Voice
+╰───────────────•✧•───────────────╯
+
+📌 *Reply with the number to download your choice.*
+`;
+    const sentMsg = await conn.sendMessage(from, {
+      image: { url: thumb },
+      caption: caption
+    }, { quoted: m });
+
+    const messageID = sentMsg.key.id;
+
+    conn.ev.on("messages.upsert", async (msgData) => {
+      const receivedMsg = msgData.messages[0];
+      if (!receivedMsg.message) return;
+
+      const receivedText = receivedMsg.message.conversation || receivedMsg.message.extendedTextMessage?.text;
+      const senderID = receivedMsg.key.remoteJid;
+      const isReplyToBot = receivedMsg.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
+
+      if (isReplyToBot) {
+        await conn.sendMessage(senderID, {
+          react: { text: '⬇️', key: receivedMsg.key }
+        });
+
+        switch (receivedText) {
+          case "1":
+            await conn.sendMessage(senderID, {
+              video: { url: video_sd },
+              caption: "📥 *Downloaded in SD Quality*"
+            }, { quoted: receivedMsg });
+            break;
+
+          case "2":
+            await conn.sendMessage(senderID, {
+              video: { url: video_hd },
+              caption: "📥 *Downloaded in HD Quality*"
+            }, { quoted: receivedMsg });
+            break;
+
+          case "3":
+            await conn.sendMessage(senderID, {
+              audio: { url: video_sd },
+              mimetype: "audio/mpeg"
+            }, { quoted: receivedMsg });
+            break;
+
+          case "4":
+            await conn.sendMessage(senderID, {
+              document: { url: video_sd },
+              mimetype: "audio/mpeg",
+              fileName: "Twitter_Audio.mp3",
+              caption: "📥 *Audio Downloaded as Document*"
+            }, { quoted: receivedMsg });
+            break;
+
+          case "5":
+            await conn.sendMessage(senderID, {
+              audio: { url: video_sd },
+              mimetype: "audio/mp4",
+              ptt: true
+            }, { quoted: receivedMsg });
+            break;
+
+          default:
+            reply("❌ Invalid option! Please reply with 1, 2, 3, 4, or 5.");
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    reply("❌ An error occurred while processing your request. Please try again.");
+  }
+});
+
+cmd({
+    pattern: "pindl",
+    alias: ["pinterestdl", "pin", "pins", "pindownload"],
+    desc: "Download media from Pinterest",
+    category: "download",
+    filename: __filename
+}, async (conn, mek, m, { args, quoted, from, reply }) => {
+    try {
+      const config = await readEnv();
+    const owner = config.OWNER_NAME || "Shashika Dilshan";
+    const botName = config.BOT_NAME || "AGNI";
+        // Make sure the user provided the Pinterest URL
+        if (args.length < 1) {
+            return reply('❎ Please provide the Pinterest URL to download from.');
+        }
+
+        // Extract Pinterest URL from the arguments
+        const pinterestUrl = args[0];
+
+        // Call your Pinterest download API
+        const response = await axios.get(`https://api.giftedtech.web.id/api/download/pinterestdl?apikey=gifted&url=${encodeURIComponent(pinterestUrl)}`);
+
+        if (!response.data.success) {
+            return reply('❎ Failed to fetch data from Pinterest.');
+        }
+
+        const media = response.data.result.media;
+        const description = response.data.result.description || 'No description available'; // Check if description exists
+        const title = response.data.result.title || 'No title available';
+
+        // Select the best video quality or you can choose based on size or type
+        const videoUrl = media.find(item => item.type.includes('720p'))?.download_url || media[0].download_url;
+
+        // Prepare the new message with the updated caption
+        const desc = `
+╔═══════════════════════════╗
+║       💠 *${botName}* 💠
+║    ⌬ PINS DOWNLOADER ⌬
+╚═══════════════════════════╝
+
+╭───────────────•✧•───────────────╮
+│ ✦ *Title:* ${title}
+│ ✦ *Media Type:* ${media[0].type}
+╰───────────────•✧•───────────────╯
+
+╔═══════════════════════════╗
+║      ❝ Powered with ❤️ by ${botName} ❞
+╚═══════════════════════════╝
+`;
+
+        // Send the media (video or image) to the user
+        if (videoUrl) {
+            // If it's a video, send the video
+            await conn.sendMessage(from, { video: { url: videoUrl }, caption: desc }, { quoted: mek });
+        } else {
+            // If it's an image, send the image
+            const imageUrl = media.find(item => item.type === 'Thumbnail')?.download_url;
+            await conn.sendMessage(from, { image: { url: imageUrl }, caption: desc }, { quoted: mek });
+        }
+
+    } catch (e) {
+        console.error(e);
+        await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
+        reply('❎ An error occurred while processing your request.');
+    }
+});
+
+cmd({
+    pattern: "sptdl",
+    alias: ["spotifydl", "spotidown"],
+    desc: "Download Spotify music as MP3",
+    category: "download",
+    react: "🎵",
+    filename: __filename
+},
+async (conn, mek, m, { from, args, q, reply, pushname }) => {
+    try {
+      const config = await readEnv();
+    const owner = config.OWNER_NAME || "Shashika Dilshan";
+    const botName = config.BOT_NAME || "AGNI";
+        if (!q) return reply("*Please provide a Spotify link.*");
+        if (!q.includes("spotify.com")) return reply("*Invalid Spotify link provided.*");
+
+        reply("⏳ *Fetching Spotify track... Please wait!*");
+
+        const { data } = await axios.get(`https://api.siputzx.my.id/api/d/spotify`, {
+            params: { url: q }
+        });
+
+        if (!data.status || !data.data) return reply("*Failed to fetch Spotify track. Please try again later.*");
+
+        const {
+            title,
+            type,
+            artis,
+            durasi,
+            image,
+            download
+        } = data.data;
+
+        // Convert duration from milliseconds to MM:SS format
+        const durationSec = Math.floor(durasi / 1000);
+        const minutes = Math.floor(durationSec / 60).toString().padStart(2, '0');
+        const seconds = (durationSec % 60).toString().padStart(2, '0');
+        const duration = `${minutes}:${seconds}`;
+
+        
+    const caption = `
+╔═══════════════════════╗
+║      🎵 SPOTIFY DOWNLOADER 🎵
+╚═══════════════════════╝
+
+🎼 *Title:* ${title}
+🧑‍🎤 *Artist:* ${artis}
+🎶 *Type:* ${type}
+⏱️ *Duration:* ${duration}
+
+╭─────────────────────────╮
+│ ✦ DOWNLOADED BY: ${botName}
+╰─────────────────────────╯
+`.trim();
+
+        // Send cover image with track info
+        await conn.sendMessage(from, {
+            image: { url: image },
+            caption: caption
+        }, { quoted: mek });
+
+        // Send the MP3 file
+        await conn.sendMessage(from, {
+            audio: { url: download },
+            mimetype: "audio/mpeg",
+            ptt: false
+        }, { quoted: mek });
+
+    } catch (e) {
+        console.error("Spotify Download Error:", e);
+        reply("*Oops! An error occurred while downloading the Spotify track.*");
+    }
+});
+cmd({
+  pattern: "wall",
+  alias: ["randomw", "wallpaper"],
+  react: "🖼",
+  desc: "Download random wallpapers based on keywords.",
+  category: "wallpapers",
+  use: ".rw <keyword>",
+  filename: __filename
+}, async (conn, m, store, { from, args, reply }) => {
+  try {
+    const query = args.join(" ") || "random";
+    const apiUrl = `https://pikabotzapi.vercel.app/random/randomwall/?apikey=anya-md&query=${encodeURIComponent(query)}`;
+
+    const { data } = await axios.get(apiUrl);
+
+    if (data.status && data.imgUrl) {
+      const caption = `
+╔════════════════════════╗
+║      🖼️ WALLPAPER 🖼️
+╚════════════════════════╝
+
+🎯 *Query:* ${query || "No query provided"}
+⚡ *For more updates, follow our channel!*
+
+╭────────────────────────╮
+│ ✦ Enjoy your wallpaper!
+╰────────────────────────╯
+`;
+
+      await conn.sendMessage(from, {
+        image: { url: data.imgUrl },
+        caption,
+        ...newsletterContext
+      }, { quoted: quotedContact });
+
+    } else {
+      reply(`❌ No wallpaper found for *"${query}"*.`);
+    }
+  } catch (error) {
+    console.error("Wallpaper Error:", error);
+    reply("❌ An error occurred while fetching the wallpaper. Please try again.");
+  }
+});
+
+
+const apilink = "https://darkyasiya-new-movie-api.vercel.app/";
+const apikey = '';
+const oce = '`';
+
+function formatNumber(num) {
+    return String(num).padStart(2, '0');
+}
+
+cmd({
+    pattern: "hub",
+    alias: ["ph"],
+    react: "🔞",
+    desc: "Download Pornhub video",
+    category: "download",
+    use: ".ph < query >",
+    filename: __filename
+}, async (conn, m, mek, { from, q, reply }) => {
+    try {
+      const config = await readEnv();
+    const owner = config.OWNER_NAME || "Shashika Dilshan";
+    const botName = config.BOT_NAME || "AGNI";
+        if (!q) return await reply("Query need ?");
+
+        const searchRes = (await axios.get(`${apilink}/api/other/pornhub/search?q=${q}&apikey=${apikey}`)).data;
+        const response = searchRes?.data;
+
+        if (!response || response.length === 0) return await reply("Result not found: " + q);
+
+        let info = `\`PORNHUB DOWNLOADER\`\n\n`;
+        for (let v = 0; v < response.length; v++) {
+            info += `*${formatNumber(v + 1)} ||* ${response[v].title}\n`;
+        }
+        info += `\n${config.BOT_NAME}`;
+
+        const sentMsg = await conn.sendMessage(from, {
+            text: info,
+            contextInfo: {
+                externalAdReply: {
+                    title: "PORNHUB DOWNLOADER",
+                    body: "",
+                    thumbnailUrl: config.LOGO,
+                    mediaType: 1,
+                    sourceUrl: q
+                }
+            }
+        }, { quoted: mek });
+
+        const messageID = sentMsg.key.id;
+
+        const handler = async (messageUpdate) => {
+            const mekInfo = messageUpdate?.messages?.[0];
+            if (!mekInfo?.message) return;
+
+            const messageText = mekInfo.message.conversation || mekInfo.message.extendedTextMessage?.text;
+            const isReplyToSentMsg = mekInfo?.message?.extendedTextMessage?.contextInfo?.stanzaId === messageID;
+
+            if (!isReplyToSentMsg) return;
+
+            conn.ev.off('messages.upsert', handler); // remove listener after one response
+
+            try {
+                let selectedIndex = parseInt(messageText.trim()) - 1;
+
+                if (selectedIndex >= 0 && selectedIndex < response.length) {
+                    const selectVid = response[selectedIndex];
+                    await conn.sendMessage(from, { react: { text: '🔌', key: mekInfo.key } });
+
+                    const videoRes = await axios.get(`${apilink}/api/other/pornhub/download?url=${selectVid.videoUrl}&apikey=${apikey}`);
+                    const data = videoRes.data?.data;
+
+                    if (!data || !data.videos || data.videos.length === 0) return reply(`*Download link not found. ❌*`);
+
+                    let s_m_g = '';
+                    for (let l = 0; l < data.videos.length; l++) {
+                        s_m_g += `${formatNumber(l + 1)} || Download ${data.videos[l].quality.split("-")[0].trim()} Quality\n\n`;
+                    }
+
+                    let mg = `╭─────────────────────╮\n` +
+                        `│ 🔞 *P HUB DOWNLOADER* 🔞 \n` +
+                        `├─────────────────────┤\n` +
+                        `│ 📜 ${oce}Title:${oce} *${data.title}*\n` +
+                        `│\n` +
+                        `│ 🗣️ ${oce}Input:${oce} *${q}*\n` +
+                        `╰─────────────────────╯\n\n` +
+                        `${s_m_g}`;
+
+                    const mass = await conn.sendMessage(from, {
+                        image: { url: data.cover},
+                        caption: mg
+                    }, { quoted: mekInfo });
+
+                    const messageID2 = mass.key.id;
+
+                    const handler2 = async (update2) => {
+                        const replyMsg = update2?.messages?.[0];
+                        if (!replyMsg?.message) return;
+
+                        const msgTxt = replyMsg.message.conversation || replyMsg.message.extendedTextMessage?.text;
+                        const isReplyToSecond = replyMsg?.message?.extendedTextMessage?.contextInfo?.stanzaId === messageID2;
+
+                        if (!isReplyToSecond) return;
+
+                        conn.ev.off('messages.upsert', handler2); // remove second listener
+
+                        try {
+                            let selected = parseInt(msgTxt.trim()) - 1;
+                            if (selected >= 0 && selected < data.videos.length) {
+                                const selectedVideo = data.videos[selected];
+
+                                await conn.sendMessage(from, {
+                                    react: { text: '⬇️', key: replyMsg.key }
+                                });
+
+                                await conn.sendMessage(from, {
+                                    document: { url: selectedVideo.url },
+                                    mimetype: "video/mp4",
+                                    fileName: `${data.title}.mp4`,
+                                    caption: `${data.title}`
+                                }, { quoted: replyMsg });
+
+                                await conn.sendMessage(from, {
+                                    react: { text: '✅', key: replyMsg.key }
+                                });
+
+                            } else {
+                                await conn.sendMessage(from, {
+                                    text: `Invalid selection. Use 01 - ${data.videos.length}`,
+                                    quoted: replyMsg
+                                });
+                            }
+                        } catch (e) {
+                            console.log(e);
+                            await conn.sendMessage(from, { text: "Error !!" }, { quoted: replyMsg });
+                        }
+                    };
+
+                    conn.ev.on('messages.upsert', handler2);
+
+                } else {
+                    return await conn.sendMessage(from, {
+                        text: `Invalid selection. Use 01 - ${response.length}`,
+                        quoted: mekInfo
+                    });
+                }
+
+            } catch (e) {
+                console.log(e);
+                await conn.sendMessage(from, { text: "Error !!" }, { quoted: mekInfo });
+            }
+        };
+
+        conn.ev.on('messages.upsert', handler);
+
+    } catch (e) {
+        console.log(e);
+        await reply("Error !!");
+    }
+});
+                                                                   
