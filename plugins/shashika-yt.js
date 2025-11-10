@@ -237,7 +237,7 @@ cmd({
 2 || . 🎧  Audio
 3 || . 🎶  Voice Note
 »»──────────────────────►
-> *© Powered by ${botname}*`;
+> *© Powered by ${botName}*`;
 
     const sentMsg = await conn.sendMessage(from, {
       image: { url: yts.thumbnail },
