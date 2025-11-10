@@ -1,90 +1,70 @@
-
+//𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧//
 const fs = require('fs');
 const path = require('path');
 const { readEnv } = require('../lib/database');
-const {cmd , commands} = require('../command')
+const { cmd } = require('../command');
 
-//auto_voice
-cmd({
-  on: "body"
-},    
-async (conn, mek, m, { from, body, isOwner }) => {
-    const filePath = path.join(__dirname, '../data/autovoice.json');
+// auto_voice
+cmd({ on: "body" }, async (conn, mek, m, { from, body, isOwner }) => {
+    const config = await readEnv(); // DB එකෙන් load කරනවා
+    const filePath = path.join(__dirname, '../sd-data/auto-voice.json');
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
     for (const text in data) {
         if (body.toLowerCase() === text.toLowerCase()) {
-            
             if (config.AUTO_VOICE === 'true') {
-                //if (isOwner) return;        
                 await conn.sendPresenceUpdate('recording', from);
                 await conn.sendMessage(from, { audio: { url: data[text] }, mimetype: 'audio/mpeg', ptt: true }, { quoted: mek });
             }
         }
-    }                
+    }
 });
 
-//auto sticker 
-cmd({
-  on: "body"
-},    
-async (conn, mek, m, { from, body, isOwner }) => {
-    const filePath = path.join(__dirname, '../data/autosticker.json');
+// auto_sticker
+cmd({ on: "body" }, async (conn, mek, m, { from, body, isOwner }) => {
+    const config = await readEnv();
+    const filePath = path.join(__dirname, '../sd-data/auto-stickers.json');
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
     for (const text in data) {
         if (body.toLowerCase() === text.toLowerCase()) {
-            
             if (config.AUTO_STICKER === 'true') {
-                //if (isOwner) return;        
-                await conn.sendMessage(from,{sticker: { url : data[text]},package: 'Malvin King'},{ quoted: mek })   
-            
+                await conn.sendMessage(from, { sticker: { url: data[text] }, package: 'Malvin King' }, { quoted: mek });
             }
         }
-    }                
+    }
 });
 
-//auto reply 
-cmd({
-  on: "body"
-},    
-async (conn, mek, m, { from, body, isOwner }) => {
-    const filePath = path.join(__dirname, '../data/autoreply.json');
+// auto_reply
+cmd({ on: "body" }, async (conn, mek, m, { from, body, isOwner }) => {
+    const config = await readEnv();
+    const filePath = path.join(__dirname, '../sd-data/auto-reply.json');
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
     for (const text in data) {
         if (body.toLowerCase() === text.toLowerCase()) {
-            
             if (config.AUTO_REPLY === 'true') {
-                //if (isOwner) return;        
-                await m.reply(data[text])
-            
+                await m.reply(data[text]);
             }
         }
-    }                
+    }
 });
 
+// fake_recording
+cmd({ on: "body" }, async (conn, mek, m, { from, body, isOwner }) => {
+    const config = await readEnv();
+    if (config.FAKE_RECORDING === 'true') {
+        await conn.sendPresenceUpdate('recording', from);
+    }
+});
 
-//fake recording
-cmd({
-  on: "body"
-},    
-async (conn, mek, m, { from, body, isOwner }) => {       
- if (config.FAKE_RECORDING === 'true') {
-                await conn.sendPresenceUpdate('recording', from);
-            }
-         } 
-   );
-
-cmd({
-    on: "body" // Trigger on every message
+// Composing (Auto Typing)
+lite({
+    on: "body"
 },    
 async (conn, mek, m, { from, body, isOwner }) => {
-    if (config.AUTO_TYPING === 'true' && body && body.length > 0) {
-            await conn.sendPresenceUpdate('composing', from); // typing effect
-            // Stop typing after random 2-4 seconds
-            setTimeout(async () => {
-                await conn.sendPresenceUpdate('available', from);
-            }, 2000 + Math.random() * 2000);
-        }
-    } catch (err) {
-        console.error('Always Online / Auto Typing Error:', err);
+    const config = await readEnv();
+    if (config.AUTO_TYPING === 'true') {
+        await conn.sendPresenceUpdate('composing', from); // send typing 
     }
 });
