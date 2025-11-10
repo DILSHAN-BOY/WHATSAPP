@@ -88,7 +88,7 @@ cmd({
   pattern: "img",
   alias: ["aiimg3", "bingimage"],
   desc: "Search for images using Bing and send 5 results.",
-  category: "other",
+  category: "search",
   use: ".bingimg <query>",
   filename: __filename,
 }, async (conn, mek, msg, { from, args, reply }) => {
