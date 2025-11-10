@@ -12,7 +12,6 @@ const fetch = require("node-fetch");
 const { cmd } = require("../command");
 const { fetchJson } = require("../lib/functions");
 const { igdl } = require("ruhend-scraper");
-const axios = require("axios");
 const { readEnv } = require('../lib/database');
 const API_URL = "https://facebook-downloader.apis-bj-devs.workers.dev/"; // Current API URL
 const api = `https://nethu-api-ashy.vercel.app`;
