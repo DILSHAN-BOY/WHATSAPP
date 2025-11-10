@@ -5,7 +5,7 @@ const os = require("os");
 const path = require("path");
 const translate = require('@vitalets/google-translate-api');
 const { fetchJson } = require('../lib/functions');
-const config = require("../config");
+const { readEnv } = require("../lib/database");
 const { cmd, commands } = require("../command");
 
 // COUNTRY INFO
@@ -18,7 +18,7 @@ cmd({
   filename: __filename
 }, async (conn, mek, m, { from, q, reply, react }) => {
   try {
-    if (!q) return reply("Please provide a country name.\nExample: `.countryinfo Pakistan`");
+    if (!q) return reply("Please provide a country name.\nExample: `prifix countryinfo Sri Lanka`");
 
     const apiUrl = `https://api.siputzx.my.id/api/tools/countryInfo?name=${encodeURIComponent(q)}`;
     const { data } = await axios.get(apiUrl);
@@ -49,7 +49,7 @@ cmd({
 ║ 🌎  Internet TLD  : ${info.internetTLD}
 ║ 🔗  Neighbors     : ${neighborsText}
 ╚═════════════════════════╝
-`.trim();}`;
+`;
 
     await conn.sendMessage(from, {
       image: { url: info.flag },
