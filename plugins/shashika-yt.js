@@ -1,4 +1,4 @@
-const config = require('../lib/database');
+const { readEnv } = require('../lib/database');
 const { cmd } = require('../command');
 const { ytsearch } = require('@dark-yasiya/yt-dl.js'); 
 
