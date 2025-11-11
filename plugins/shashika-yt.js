@@ -18,7 +18,7 @@ const fetch = require('node-fetch'); // Ensure this line exists if not globally 
 
 cmd({
     pattern: "mp4",
-    alias: ["mp4", "song"],
+    alias: ["mp4", "ytv"],
     react: "🎥",
     desc: "Download video from YouTube",
     category: "download",
