@@ -118,7 +118,7 @@ async (conn, mek, m, { from, sender, reply, isGroup }) => {
     try {
       imageUrl = await conn.profilePictureUrl(targetJid, 'image');
     } catch {
-      imageUrl = config.MAIN_MENU_URL";
+      imageUrl = config.MAIN_MENU_URL;
     }
 
     const fakeVCard = {
