@@ -2,36 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 const { cmd } = require('../command');
 
-cmd({
-  on: "audioMessage"
-}, async (conn, mek, m, { from, reply }) => {
-    try {
-        const buffer = await conn.downloadMediaMessage(mek);
-        fs.writeFileSync("./voice.ogg", buffer);
 
-        reply("🎤 *Converting voice to text...*");
-
-        const send = await axios({
-            method: 'post',
-            url: 'https://api.openai.com/v1/audio/transcriptions',
-            headers: {
-                "Content-Type": "multipart/form-data",
-                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-            },
-            data: {
-                file: fs.createReadStream("./voice.ogg"),
-                model: "whisper-1"
-            }
-        });
-
-        reply("🗣️ *Transcript:* " + send.data.text);
-        fs.unlinkSync("./voice.ogg");
-
-    } catch (e) {
-        reply("❌ Voice read failed.");
-        console.log(e);
-    }
-});
 
 cmd({
     pattern: "ai",
