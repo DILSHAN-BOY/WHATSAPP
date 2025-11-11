@@ -12,85 +12,58 @@ const API_KEY = "dinesh-api-key";
 // 🎵 Command: MP4 / Video Download (.mp4, .video, .ytv)
 // =================================================================
 
+
+const yts = require('yt-search');
+const fetch = require('node-fetch'); // Ensure this line exists if not globally available
+
 cmd({
-  pattern: "mp4",
-  alias: ["video", "ytv"],
-  react: "🎥",
-  desc: "Download Youtube video",
-  category: "download",
-  use: '.mp4 < Yt url or Name >',
-  filename: __filename
-}, 
-async (conn, mek, m, { from, q, reply }) => {
+    pattern: "mp4",
+    alias: ["mp4", "song"],
+    react: "🎥",
+    desc: "Download video from YouTube",
+    category: "download",
+    use: ".video <query or url>",
+    filename: __filename
+}, async (conn, m, mek, { from, q, reply }) => {
+    try {
+        if (!q) return await reply("❌ Please provide a video name or YouTube URL!");
 
-  try {
-      const config = await readEnv();
-      const owner = config.OWNER_NAME || "Shashika Dilshan";
-      const botName = config.BOT_NAME || "AGNI";
+        let videoUrl, title;
 
-      if (!API_KEY || API_KEY === "dinesh-api-key") 
-          return reply("⚠️ *SADIYA_API_KEY is missing!*");
+        if (q.match(/(youtube\.com|youtu\.be)/)) {
+            videoUrl = q;
+            title = "YouTube Video";
+        } else {
+            const search = await yts(q);
+            if (!search.videos.length) return await reply("❌ No results found!");
+            videoUrl = search.videos[0].url;
+            title = search.videos[0].title;
+        }
 
-      if (!q) return reply("*Use:* .mp4 < YouTube Link / Song Name >");
+        await reply("⏳ Downloading video... Please wait.");
 
-      // Search Video on YouTube
-      let yt = await ytsearch(q);
-      if (!yt.results || yt.results.length < 1) return reply("❌ No results found!");
+        const apiUrl = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        const data = await response.json();
 
-      let vid = yt.results[0];
+        if (!data.result || !data.result.download_url)
+            return await reply("❌ Failed to get video download link!");
 
-      // API Request
-      const apiUrl = `${API_BASE_URL2}?url=${encodeURIComponent(vid.url)}&format=360&apikey=${API_KEY}`;
-      const { data } = await axios.get(apiUrl);
+        await conn.sendMessage(from, {
+            video: { url: data.result.download_url },
+            mimetype: 'video/mp4',
+            caption: `🎬 *${title.substring(0, 60)}*`
+        }, { quoted: mek });
 
-      if (!data.status) return reply("❌ API Error: " + (data.error || data.err));
+        await reply(`✅ Video sent successfully: ${title}`);
+
+    } catch (error) {
+        console.error("Video Download Error:", error);
+        await reply(`❌ Error: ${error.message}`);
+    }
+});
       
-      const d = data.result;
-
-      if (!d.download) return reply("❌ Couldn't get video download link!");
-
-      let caption = `
-╭──────────────────────◆
-│ 🎬 *${botName} - VIDEO DOWNLOADER*
-╰──────────────────────◆
-
-┌── *VIDEO INFO*
-│🔹 *Title:* ${vid.title}
-│🔹 *Duration:* ${vid.timestamp}
-│🔹 *Views:* ${vid.views}
-│🔹 *Channel:* ${vid.author.name}
-│🔹 *Link:* ${vid.url}
-└──────────────────────◆
-
-⚡ *Powered By:* ${owner}
-`;
-
-      // Send Thumbnail with caption
-      await conn.sendMessage(from, { 
-        image: { url: d.thumbnail }, 
-        caption 
-      }, { quoted: mek });
-
-      // Send Video
-      await conn.sendMessage(from, { 
-        video: { url: d.download }, 
-        mimetype: "video/mp4",
-        caption: `🎥 *${vid.title}*\n\n> ✅ *Downloaded by ${botName}*`
-      }, { quoted: mek });
-
-      // Send Document Version
-      await conn.sendMessage(from, { 
-        document: { url: d.download }, 
-        mimetype: "video/mp4",
-        fileName: `${vid.title}.mp4`,
-        caption: `📦 *Document Version*\n> ✅ *${botName}*`
-      }, { quoted: mek });
-
-  } catch (err) {
-      console.log("MP4 Error:", err);
-      return reply("❌ Failed. API / Server may be busy.\nTry again later!");
-  }
-});  
        
 // =================================================================
 // 🎶 Command: MP3 / Audio Download (.song, .yta, .play)
