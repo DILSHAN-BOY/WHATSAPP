@@ -42,7 +42,7 @@ cmd({
 
         await reply("⏳ Downloading video... Please wait.");
 
-        const apiUrl = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`;
+        const apiUrl = `https://apiskeith.vercel.app/download/ytmp4?url=${encodeURIComponent(videoUrl)}`;
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         const data = await response.json();
