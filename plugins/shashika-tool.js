@@ -498,7 +498,7 @@ ${truncatedCode}
 
         // Send image with truncated source code
         await conn.sendMessage(from, { 
-            image: { url: config.MAIN_IMAGE_URL }  // Image URL
+            image: { url: config.MAIN_IMAGE_URL },  // Image URL
             caption: formattedCode,
             contextInfo: { // FIX: Correctly placing contextInfo inside the message options
                 mentionedJid: [m.sender],
