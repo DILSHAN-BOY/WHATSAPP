@@ -10,20 +10,21 @@ Browsers
 
 const l = console.log
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
+const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('../SHASHIKA-data')
 const fs = require('fs')
 const P = require('pino')
 const config = require('./config')
 const qrcode = require('qrcode-terminal')
+const StickersTypes = require('wa-sticker-formatter')
 const util = require('util')
-const { sms,downloadMediaMessage } = require('./lib/msg')
+const { sms,downloadMediaMessage,AntiDelete } = require('./lib')
 const axios = require('axios')
 const { File } = require('megajs')
 
-const ownerNumber = ['94772469026']
-
-// ✅ Connect MongoDB before anything else
 const connectDB = require('./lib/mongodb');
 connectDB();
+const ownerNumber = config.OWNER_NUM
+
 
 //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
