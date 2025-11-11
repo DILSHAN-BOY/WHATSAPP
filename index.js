@@ -252,14 +252,14 @@ events.commands.map(async (command) => {
     }
 });
 
-//============================================================================
-
+//================ EXPRESS SERVER =====================
 app.get("/", (req, res) => {
-    res.send("hey, bot started✅");
+  res.send("hey, bot started✅");
 });
 
 app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
 
+//================ START BOT =====================
 setTimeout(() => {
-    connectToWA();
+  connectToWA();
 }, 4000);
