@@ -156,7 +156,6 @@ async (conn, mek, m, { from, sender, reply, isGroup }) => {
   }
 });
 
-const { cmd } = require('../command');
 
 cmd({
     pattern: "obfuscate",
