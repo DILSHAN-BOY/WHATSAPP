@@ -10,21 +10,22 @@ Browsers
 
 const l = console.log
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
-const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('../SHASHIKA-data')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
+  const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('./SHASHIKA-data')
 const fs = require('fs')
 const P = require('pino')
 const config = require('./config')
 const qrcode = require('qrcode-terminal')
-const StickersTypes = require('wa-sticker-formatter')
 const util = require('util')
 const { sms,downloadMediaMessage,AntiDelete } = require('./lib')
 const axios = require('axios')
 const { File } = require('megajs')
 
+const ownerNumber = ['94772469026']
+
+// ✅ Connect MongoDB before anything else
 const connectDB = require('./lib/mongodb');
 connectDB();
-const ownerNumber = config.OWNER_NUM
-
 
 //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
@@ -45,8 +46,8 @@ const port = process.env.PORT || 8000;
 async function connectToWA() {
   // ✅ Load dynamic ENV variables from MongoDB
   const { readEnv } = require('./lib/database');
-  const config = await readEnv();
-  const prefix = config.PREFIX || '.';
+  const dbConfig = await readEnv();
+  const prefix = dbConfig.PREFIX || '.';
         
 console.log("Connecting wa bot 🧬...");
 const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
@@ -84,46 +85,59 @@ conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://files
 
 }
 })
+  //============================== 
 
-//=============readstatus=======
-        
-  conn.ev.on('messages.upsert', async(mek) => {
-    mek = mek.messages[0]
-    if (!mek.message) return
+  conn.ev.on("group-participants.update", (update) => GroupEvents(conn, update));	
+
+	//============= READ STATUS =============
+conn.ev.on('messages.upsert', async(mek) => {
+    mek = mek.messages[0];
+    if (!mek.message) return;
+
+    // Handle ephemeral messages
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
-    ? mek.message.ephemeralMessage.message 
-    : mek.message;
-    //console.log("New Message Detected:", JSON.stringify(mek, null, 2));
-  if (config.READ_MESSAGE === 'true') {
-    await conn.readMessages([mek.key]);  // Mark message as read
-    console.log(`Marked message from ${mek.key.remoteJid} as read.`);
-  }
-    if(mek.message.viewOnceMessageV2)
-    mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true"){
-      await conn.readMessages([mek.key])
-    }
-  if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true"){
-    const malvinlike = await conn.decodeJid(conn.user.id);
-    const emojis = ['❤️', '💸', '😇', '🍂', '💥', '💯', '🔥', '💫', '💎', '💗', '🤍', '🖤', '👀', '🙌', '🙆', '🚩', '🥰', '💐', '😎', '🤎', '✅', '🫀', '🧡', '😁', '😄', '🌸', '🕊️', '🌷', '⛅', '🌟', '🗿', '🇵🇰', '💜', '💙', '🌝', '🖤', '💚'];
-    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-    await conn.sendMessage(mek.key.remoteJid, {
-      react: {
-        text: randomEmoji,
-        key: mek.key,
-      } 
-    }, { statusJidList: [mek.key.participant, malvinlike] });
-  }                       
-  if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
-  const user = mek.key.participant
-  const text = `${config.AUTO_STATUS_MSG}`
-  await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek })
-            }
-            await Promise.all([
-              saveMessage(mek),
-            ]);
+        ? mek.message.ephemeralMessage.message 
+        : mek.message;
 
-	
+    // ✅ Mark messages as read automatically if enabled in config
+    if (config.READ_MESSAGE === 'true') {
+        await conn.readMessages([mek.key]);  // Mark the message as read
+        console.log(`Marked message from ${mek.key.remoteJid} as read.`);
+    }
+
+    // Handle view once messages
+    if(mek.message.viewOnceMessageV2) {
+        mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
+            ? mek.message.ephemeralMessage.message 
+            : mek.message;
+    }
+
+    // Auto-read WhatsApp status messages if enabled
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true") {
+        await conn.readMessages([mek.key]);
+        console.log(`Auto-read status from ${mek.key.participant}`);
+    }
+
+    // Auto-react to status updates if enabled
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true") {
+        const malvinlike = await jidNormalizedUser(conn.user.id);
+        const emojis = ['❤️', '💸', '😇', '🍂', '💥', '💯', '🔥', '💫', '💎', '💗', '🤍', '🖤'];
+        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+        await conn.sendMessage(mek.key.remoteJid, {
+            react: { text: randomEmoji, key: mek.key }
+        }, { statusJidList: [mek.key.participant, malvinlike] });
+    }
+
+    // Auto-reply to status updates if enabled
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true") {
+        const user = mek.key.participant;
+        const text = `${config.AUTO_STATUS_MSG}`;
+        await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek });
+    }
+
+    // Save the message to DB
+    await saveMessage(mek);
+});
 conn.ev.on('creds.update', saveCreds)  
 
 conn.ev.on('messages.upsert', async(mek) => {
@@ -186,12 +200,7 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
 //if(isReact) return
 //m.react("😊")
 //}
-
-if(senderNumber.includes("94705104830")){
-if(isReact) return
-m.react("🍀")
-}
-	//==========public react============//
+  //==========public react============//
   
 // Auto React for all messages (public and owner)
 if (!isReact && config.AUTO_REACT === 'true') {
@@ -215,51 +224,52 @@ if (!isReact && config.AUTO_REACT === 'true') {
 
     const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
     m.react(randomReaction);
-		   }
+		}
 //=======================work type =============================================================================
 if(!isOwner && config.MODE === "private") return
 if(!isOwner && isGroup && config.MODE === "inbox") return
 if(!isOwner && !isGroup && config.MODE === "groups") return
 //==========================
     
-const events = require('./command');
+const events = require('./command')
 const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
-
 if (isCmd) {
-    const cmd = events.commands.find((cmd) => cmd.pattern === cmdName) 
-          || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName));
+const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
+if (cmd) {
+if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key }})
 
-    if (cmd) {
-        if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key } });
-
-        try {
-            cmd.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
-        } catch (e) {
-            console.error("[PLUGIN ERROR] " + e);
-        }
-    }
+try {
+cmd.function(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply});
+} catch (e) {
+console.error("[PLUGIN ERROR] " + e);
 }
+}
+}
+events.commands.map(async(command) => {
+if (body && command.on === "body") {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+} else if (mek.q && command.on === "text") {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+} else if (
+(command.on === "image" || command.on === "photo") &&
+mek.type === "imageMessage"
+) {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+} else if (
+command.on === "sticker" &&
+mek.type === "stickerMessage"
+) {
+command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
+}});
+//============================================================================ 
 
-events.commands.map(async (command) => {
-    if (body && command.on === "body") {
-        command.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
-    } else if (mek.q && command.on === "text") {
-        command.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
-    } else if ((command.on === "image" || command.on === "photo") && mek.type === "imageMessage") {
-        command.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
-    } else if (command.on === "sticker" && mek.type === "stickerMessage") {
-        command.function(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply });
-    }
-});
-
-//================ EXPRESS SERVER =====================
+})
+}
 app.get("/", (req, res) => {
-  res.send("hey, bot started✅");
+res.send("hey, bot started✅");
 });
-
 app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
-
-//================ START BOT =====================
 setTimeout(() => {
-  connectToWA();
-}, 4000);
+connectToWA()
+}, 4000);  
+	
