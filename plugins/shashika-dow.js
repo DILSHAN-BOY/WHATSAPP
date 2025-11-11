@@ -22,7 +22,7 @@ const safe = (v, d = null) => (v === undefined || v === null ? d : v);
 
 cmd(
   {
-    pattern: "fb1",
+    pattern: "fb",
     alias: ["facebook"],
     react: "🎬",
     category: "download",
@@ -729,7 +729,7 @@ cmd({
 });
   
 cmd({
-    pattern: "ytpost",
+    pattern: "ytpost2",
     alias: ["ytcommunity", "ytc"],
     desc: "Download a YouTube community post",
     category: "download",
@@ -770,7 +770,7 @@ async (conn, mek, m, { from, args, q, reply, react }) => {
 });
 
 cmd({
-  pattern: "ig2",
+  pattern: "ig",
   alias: ["insta2", "Instagram2"],
   desc: "To download Instagram videos.",
   react: "🎥",
@@ -786,7 +786,7 @@ cmd({
       react: { text: "⏳", key: m.key }
     });
 
-    const response = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/igdl?url=${q}`);
+    const response = await axios.get(`https://okatsu-rolezapiiz.vercel.app/downloader/ig?url=${q}`);
     const data = response.data;
 
     if (!data || data.status !== 200 || !data.downloadUrl) {
