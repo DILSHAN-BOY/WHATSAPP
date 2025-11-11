@@ -59,7 +59,7 @@ cmd({ on: "body" }, async (conn, mek, m, { from, body, isOwner }) => {
 });
 
 // Composing (Auto Typing)
-lite({
+cmd({
     on: "body"
 },    
 async (conn, mek, m, { from, body, isOwner }) => {
