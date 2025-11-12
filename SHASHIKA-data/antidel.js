@@ -1,52 +1,95 @@
-// data.js
-const { MongoClient, ObjectId } = require('mongodb');
-const { readEnv } = require('../lib/database');
+const { DATABASE, readEnv } = require('../lib/database');
+const { DataTypes } = require('sequelize');
+const config = require('../config');
 
-let db;
-let antiDelCollection;
+// ============================================================
+// 🧩 Define Model
+// ============================================================
+const AntiDelDB = DATABASE.define('AntiDelete', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: false,
+        defaultValue: 1,
+    },
+    status: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+}, {
+    tableName: 'antidelete',
+    timestamps: false,
+    hooks: {
+        beforeCreate: (record) => { record.id = 1; },
+        beforeBulkCreate: (records) => {
+            records.forEach(record => { record.id = 1; });
+        },
+    },
+});
 
-// Initialize MongoDB connection
-async function initDB() {
-    if (db) return db;
+let isInitialized = false;
 
-    const config = await readEnv();
-    const uri = config.MONGO_URI || 'mongodb://localhost:27017';
-    const client = new MongoClient(uri);
-
-    await client.connect();
-    db = client.db(config.DB_NAME || 'AGNI_DB');
-    antiDelCollection = db.collection('anti_delete');
-    return db;
-}
-
-// Initialize AntiDelete document if not exists
+// ============================================================
+// ⚙️ Initialize AntiDelete Table
+// ============================================================
 async function initializeAntiDeleteSettings() {
-    await initDB();
-    const existing = await antiDelCollection.findOne({ _id: 'anti_delete_status' });
-    if (!existing) {
-        await antiDelCollection.insertOne({ _id: 'anti_delete_status', status: false });
+    if (isInitialized) return;
+    try {
+        const env = await readEnv();
+        await AntiDelDB.sync();
+
+        // Check if record exists; if not, create it
+        const [record, created] = await AntiDelDB.findOrCreate({
+            where: { id: 1 },
+            defaults: { status: env.ANTI_DELETE === 'true' || false },
+        });
+
+        if (created) console.log('[AntiDelete] ➜ Created default record');
+        isInitialized = true;
+    } catch (error) {
+        console.error('[AntiDelete] Error initializing:', error);
     }
 }
 
-// Set Anti-Delete status
+// ============================================================
+// 🟢 Enable/Disable AntiDelete
+// ============================================================
 async function setAnti(status) {
-    await initializeAntiDeleteSettings();
-    const result = await antiDelCollection.updateOne(
-        { _id: 'anti_delete_status' },
-        { $set: { status: Boolean(status) } },
-        { upsert: true }
-    );
-    return result.modifiedCount > 0 || result.upsertedCount > 0;
+    try {
+        await initializeAntiDeleteSettings();
+        const [updated] = await AntiDelDB.update({ status }, { where: { id: 1 } });
+        console.log(`[AntiDelete] ➜ Set to: ${status}`);
+        return updated > 0;
+    } catch (error) {
+        console.error('[AntiDelete] Error updating status:', error);
+        return false;
+    }
 }
 
-// Get Anti-Delete status
+// ============================================================
+// 🔍 Get AntiDelete Status
+// ============================================================
 async function getAnti() {
-    await initializeAntiDeleteSettings();
-    const record = await antiDelCollection.findOne({ _id: 'anti_delete_status' });
-    return record ? record.status : false;
+    try {
+        await initializeAntiDeleteSettings();
+        const record = await AntiDelDB.findByPk(1);
+        if (record) return record.status;
+
+        // fallback to config
+        const env = await readEnv();
+        return env.ANTI_DELETE === 'true' || false;
+    } catch (error) {
+        console.error('[AntiDelete] Error reading status:', error);
+        const env = await readEnv();
+        return env.ANTI_DELETE === 'true' || false;
+    }
 }
 
+// ============================================================
+// 📦 Export
+// ============================================================
 module.exports = {
+    AntiDelDB,
     initializeAntiDeleteSettings,
     setAnti,
     getAnti,
