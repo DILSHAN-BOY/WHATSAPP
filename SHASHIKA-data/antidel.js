@@ -1,5 +1,4 @@
 const { DATABASE, readEnv } = require('../lib/database');
-const { DataTypes } = require('sequelize');
 const config = require('../config');
 
 // ============================================================
