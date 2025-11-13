@@ -44,8 +44,8 @@ const port = process.env.PORT || 8000;
 async function connectToWA() {
   // ✅ Load dynamic ENV variables from MongoDB
   const { readEnv } = require('./lib/database');
-  const dbConfig = await readEnv();
-  const prefix = dbConfig.PREFIX || '.';
+  const config = await readEnv();
+  const prefix = config.PREFIX || '.';
         
 console.log("Connecting wa bot 🧬...");
 const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
