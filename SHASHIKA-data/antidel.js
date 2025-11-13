@@ -1,58 +1,72 @@
-const { DATABASE } = require('../lib/database');
-const { DataTypes } = require('sequelize');
+// SHASHIKA-data/antidel.js
+const mongoose = require('mongoose');
 
-let isInitialized = false;
-
-// Define AntiDelete model
-const AntiDelDB = DATABASE.define('AntiDel', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-    },
-    status: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
-}, {
-    tableName: 'antidelete',
-    timestamps: false,
+// MongoDB connection (ensure connection is established before using this)
+mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/whatsappbot', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 });
 
-// Initialize table
-async function initializeAntiDeleteSettings() {
-    if (isInitialized) return;
+// ✅ AntiDelete Schema
+const antiDelSchema = new mongoose.Schema({
+    chatId: { type: String, required: true, unique: true },
+    status: { type: Boolean, default: false }
+});
+
+// Model
+const AntiDel = mongoose.model('AntiDel', antiDelSchema);
+
+// Initialize: optional if you want default record
+async function initializeAntiDeleteSettings(chatId) {
     try {
-        await AntiDelDB.sync();
-        isInitialized = true;
-        console.log('[AntiDelete] Table initialized');
+        const record = await AntiDel.findOne({ chatId });
+        if (!record) {
+            await AntiDel.create({ chatId, status: false });
+            console.log(`[AntiDelete] Default record created for chatId: ${chatId}`);
+        }
     } catch (err) {
-        console.error('[AntiDelete] Error initializing table:', err);
+        console.error('[AntiDelete] Initialization error:', err.message);
     }
 }
 
-// Enable/disable
-async function setAnti(status) {
-    await initializeAntiDeleteSettings();
-    const [updated] = await AntiDelDB.update({ status }, { where: { id: 1 } });
-    return updated > 0;
+// Set status
+async function setAnti(chatId, status) {
+    try {
+        const record = await AntiDel.findOneAndUpdate(
+            { chatId },
+            { status },
+            { upsert: true, new: true }
+        );
+        return record;
+    } catch (err) {
+        console.error('[AntiDelete] setAnti error:', err.message);
+        return null;
+    }
 }
 
 // Get status
-async function getAnti() {
-    await initializeAntiDeleteSettings();
-    const record = await AntiDelDB.findByPk(1);
-    return record ? record.status : false;
+async function getAnti(chatId) {
+    try {
+        const record = await AntiDel.findOne({ chatId });
+        return record ? record.status : false;
+    } catch (err) {
+        console.error('[AntiDelete] getAnti error:', err.message);
+        return false;
+    }
 }
 
-// Optional: get all settings
+// Get all records
 async function getAllAntiDeleteSettings() {
-    await initializeAntiDeleteSettings();
-    return await AntiDelDB.findAll();
+    try {
+        return await AntiDel.find({});
+    } catch (err) {
+        console.error('[AntiDelete] getAll error:', err.message);
+        return [];
+    }
 }
 
 module.exports = {
-    AntiDelDB,
+    AntiDel,
     initializeAntiDeleteSettings,
     setAnti,
     getAnti,
