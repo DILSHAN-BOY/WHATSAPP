@@ -16,7 +16,7 @@ const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const { sms,downloadMediaMessage } = require('./lib/msg')
 const AntiDel = require("./plugins/antidelete")
-const ViewOnce = require('./plugins/viewonce')
+const ViewOnce = require('./plugins/viewonc')
 const util = require('util')
 const axios = require('axios')
 const { File } = require('megajs')
@@ -96,26 +96,33 @@ connectToWA()
   conn.ev.on("group-participants.update", (update) => GroupEvents(conn, update));	
 
 	//============= READ STATUS =============
-conn.ev.on('messages.upsert', async(mek) => {
+conn.ev.on('messages.upsert', async (mek) => {
     mek = mek.messages[0];
     if (!mek.message) return;
 
     // Handle ephemeral messages
-    mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
-        ? mek.message.ephemeralMessage.message 
-        : mek.message;
-
-    // ✅ Mark messages as read automatically if enabled in config
-    if (config.READ_MESSAGE === 'true') {
-        await conn.readMessages([mek.key]);  // Mark the message as read
-        console.log(`Marked message from ${mek.key.remoteJid} as read.`);
+    if (getContentType(mek.message) === 'ephemeralMessage') {
+        mek.message = mek.message.ephemeralMessage.message;
     }
 
     // Handle view once messages
-if (mek.message.viewOnceMessageV2) {
-    // Extract the actual content inside view once
-    mek.message = mek.message.viewOnceMessageV2.message;
-}
+    if (mek.message.viewOnceMessageV2) {
+        // Extract the actual content inside view once
+        mek.message = mek.message.viewOnceMessageV2.message;
+    }
+
+    // ✅ Mark messages as read automatically if enabled in config
+    if (config.READ_MESSAGE === 'true') {
+        await conn.readMessages([mek.key]);
+        console.log(`Marked message from ${mek.key.remoteJid} as read.`);
+    }
+
+    // Save message to DB for Anti-Delete
+    await saveMessage(mek);
+
+    // Forward / open view once using plugin
+    await ViewOnce.onViewOnce(conn, mek);
+});
     // Auto-read WhatsApp status messages if enabled
     if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true") {
         await conn.readMessages([mek.key]);
