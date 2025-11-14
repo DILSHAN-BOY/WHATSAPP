@@ -16,7 +16,7 @@ const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const { sms,downloadMediaMessage } = require('./lib/msg')
 const AntiDel = require("./plugins/antidelete")
-const ViewOnce = require('./plugins/viewonc')
+const ViewOnce = require('./plugins/viewonce')
 const util = require('util')
 const axios = require('axios')
 const { File } = require('megajs')
@@ -141,7 +141,12 @@ conn.ev.on('messages.upsert', async (mek) => { // <-- async added here
             react: { text: randomEmoji, key: mek.key }
         }, { statusJidList: [mek.key.participant, malvinlike] });
     }
-
+                     
+  if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
+  const user = mek.key.participant
+  const text = `${config.AUTO_STATUS_MSG}`
+  await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek })
+										   }
 
     // Save the message to DB
     await saveMessage(mek);
