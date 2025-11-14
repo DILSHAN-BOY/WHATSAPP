@@ -52,3 +52,45 @@ module.exports = {
         }
     }
 };
+//==================================================
+
+
+const { getContentType } = require('@whiskeysockets/baileys');
+const { getBuffer } = require('../lib/functions'); // ඔයාට already getBuffer function තියෙනවා
+
+module.exports = {
+    async onViewOnce(conn, mek) {
+        try {
+            if (!mek.message) return;
+            
+            // Check if it's a viewOnceMessage
+            if (!mek.message.viewOnceMessageV2) return;
+
+            // Extract the actual message inside viewOnceMessage
+            let content = mek.message.viewOnceMessageV2.message;
+            let type = getContentType(content);
+
+            let buffer = null;
+            let messageOptions = { caption: content[type].caption || '' };
+
+            if (type === 'imageMessage') {
+                buffer = await getBuffer(content.imageMessage);
+                await conn.sendMessage(mek.key.remoteJid, { image: buffer, ...messageOptions }, { quoted: mek });
+            } else if (type === 'videoMessage') {
+                buffer = await getBuffer(content.videoMessage);
+                await conn.sendMessage(mek.key.remoteJid, { video: buffer, ...messageOptions, mimetype: 'video/mp4' }, { quoted: mek });
+            } else if (type === 'documentMessage') {
+                buffer = await getBuffer(content.documentMessage);
+                await conn.sendMessage(mek.key.remoteJid, { document: buffer, mimetype: content.documentMessage.mimetype, ...messageOptions }, { quoted: mek });
+            } else if (type === 'audioMessage' || type === 'voiceMessage') {
+                buffer = await getBuffer(content.audioMessage || content.voiceMessage);
+                await conn.sendMessage(mek.key.remoteJid, { audio: buffer, mimetype: 'audio/mpeg', ...messageOptions }, { quoted: mek });
+            } else {
+                await conn.sendMessage(mek.key.remoteJid, { text: 'Unsupported view once type!' }, { quoted: mek });
+            }
+
+        } catch (e) {
+            console.log('ViewOnce Plugin Error:', e);
+        }
+    }
+};
