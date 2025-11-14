@@ -9,14 +9,15 @@ Browsers
 } = require('@whiskeysockets/baileys')
 
 const l = console.log
-const AntiDel = require("./plugins/antidelete");
+const AntiDel = require("./plugins/antidelete")
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
 const fs = require('fs')
 const P = require('pino')
 const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const { sms,downloadMediaMessage } = require('./lib/msg')
-const AntiDel = require("./plugins/antidelete");
+const AntiDel = require("./plugins/antidelete")
+const ViewOnce = require('./plugins/viewonce')
 const util = require('util')
 const axios = require('axios')
 const { File } = require('megajs')
@@ -112,12 +113,10 @@ conn.ev.on('messages.upsert', async(mek) => {
     }
 
     // Handle view once messages
-    if(mek.message.viewOnceMessageV2) {
-        mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
-            ? mek.message.ephemeralMessage.message 
-            : mek.message;
-    }
-
+if (mek.message.viewOnceMessageV2) {
+    // Extract the actual content inside view once
+    mek.message = mek.message.viewOnceMessageV2.message;
+}
     // Auto-read WhatsApp status messages if enabled
     if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true") {
         await conn.readMessages([mek.key]);
@@ -162,7 +161,12 @@ const botNumber = conn.user.id.split(':')[0]
 const pushname = mek.pushName || 'Sin Nombre'
 const isMe = botNumber.includes(senderNumber)
 const isOwner = ownerNumber.includes(senderNumber) || isMe
-const botNumber2 = await jidNormalizedUser(conn.user.id);
+const b/ Handle view once messages
+    if(mek.message.viewOnceMessageV2) {
+        mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
+            ? mek.message.ephemeralMessage.message 
+            : mek.message;
+		   }otNumber2 = await jidNormalizedUser(conn.user.id);
 const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
 const groupName = isGroup ? groupMetadata.subject : ''
 const participants = isGroup ? await groupMetadata.participants : ''
