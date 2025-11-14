@@ -16,7 +16,7 @@ async (conn, mek, m, { from, sender, reply }) => {
 const config = await readEnv();
         const status = `
 ╭───🍀 *${config.BOT_NAME}* ☘️───◉
-│✨ *🍀Bot is Active & Online!☘️*
+│✨ *🍀${config.ALIVE_MSG}*
 │
 │🧠 *Owner:* ${config.OWNER_NAME}
 │⚡ *Version:* 5.0.0 Pro
@@ -26,15 +26,15 @@ const config = await readEnv();
 │🖥️ *Host:* ${os.hostname()}
 │⌛ *Uptime:* ${runtime(process.uptime())}
 ╰────────────────────◉⌲
-> © 𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 ${config.OWNER_ NAME}`;
+> © 𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 ${config.OWNER_NAME}`;
 
         await conn.sendMessage(from, {
-            image: { url: config.MENU_IMAGE_URL },
+            image: { url: config.ALIVE_IMAGE },
             caption: status,
             contextInfo: {
                 mentionedJid: [m.sender],
                 forwardingScore: 1000,
-                isForwarded: true,
+                isForwarded: false,
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: '123450987650123450@newsletter',
                     newsletterName: 'META AI',
