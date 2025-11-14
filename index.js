@@ -96,9 +96,12 @@ connectToWA()
   conn.ev.on("group-participants.update", (update) => GroupEvents(conn, update));	
 
 	//============= READ STATUS =============
-conn.ev.on('messages.upsert', async (mek) => {
+conn.ev.on('messages.upsert', async (mek) => { // <-- async added here
     mek = mek.messages[0];
     if (!mek.message) return;
+
+    await conn.readMessages([mek.key]); // ✅ Now works
+});
 
     // Handle ephemeral messages
     if (getContentType(mek.message) === 'ephemeralMessage') {
