@@ -9,12 +9,14 @@ Browsers
 } = require('@whiskeysockets/baileys')
 
 const l = console.log
+const AntiDel = require("./plugins/antidelete");
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
 const fs = require('fs')
 const P = require('pino')
 const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const { sms,downloadMediaMessage } = require('./lib/msg')
+const AntiDel = require("./plugins/antidelete");
 const util = require('util')
 const axios = require('axios')
 const { File } = require('megajs')
@@ -67,22 +69,28 @@ if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
 connectToWA()
 }
 } else if (connection === 'open') {
-console.log('😼 Installing... ')
-const path = require('path');
-fs.readdirSync("./plugins/").forEach((plugin) => {
-if (path.extname(plugin).toLowerCase() == ".js") {
-require("./plugins/" + plugin);
+    console.log('😼 Installing... ')
+    const path = require('path');
+    fs.readdirSync("./plugins/").forEach((plugin) => {
+        if (path.extname(plugin).toLowerCase() == ".js") {
+            require("./plugins/" + plugin);
+        }
+    });
+    console.log('Plugins installed successful ✅')
+    console.log('Bot connected to whatsapp ✅')
+
+    let up = `𝐀𝐆𝐍𝐈 connected successful ✅\n𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧\nPREFIX: ${prefix}`;
+    conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://files.catbox.moe/4kux2y.jpg` }, caption: up })
+
+    // <<< Add Anti-Delete hook HERE inside 'open' block >>>
+    conn.ev.on("messages.update", async (updates) => {
+        for (const update of updates) {
+            if (update.update?.messageStubType === 1) {
+                await AntiDel.onMessageDeleted(conn, update);
+            }
+        }
+    });
 }
-});
-console.log('Plugins installed successful ✅')
-console.log('Bot connected to whatsapp ✅')
-
-let up = `𝐀𝐆𝐍𝐈 connected successful ✅\n𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧\nPREFIX: ${prefix}`;
-
-conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://files.catbox.moe/4kux2y.jpg` }, caption: up })
-
-}
-})
   //============================== 
 
   conn.ev.on("group-participants.update", (update) => GroupEvents(conn, update));	
@@ -126,12 +134,6 @@ conn.ev.on('messages.upsert', async(mek) => {
         }, { statusJidList: [mek.key.participant, malvinlike] });
     }
 
-    // Auto-reply to status updates if enabled
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true") {
-        const user = mek.key.participant;
-        const text = `${config.AUTO_STATUS_MSG}`;
-        await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek });
-    }
 
     // Save the message to DB
     await saveMessage(mek);
