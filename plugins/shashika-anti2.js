@@ -54,8 +54,6 @@ module.exports = {
 };
 //==================================================
 
-
-const { getContentType } = require('@whiskeysockets/baileys');
 const { getBuffer } = require('../lib/functions'); // ඔයාට already getBuffer function තියෙනවා
 
 module.exports = {
