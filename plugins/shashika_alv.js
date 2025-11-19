@@ -23,7 +23,7 @@ module.exports = [{
     }
 }, {
     cmd: ['mp4', 'video'],
-    handle: async ({ conn, m, from, sms, args, isUrl, axios }) => {
+    handle: async ({ conn, m, from, sms, args, isUrl, axios, config }) => {
         if (args.length === 0) {
             return sms.reply(from, `කරුණාකර වීඩියෝවක URL එකක් ලබා දෙන්න. උදා: ${config.PREFIX}mp4 [URL]`, m);
         }
@@ -40,7 +40,6 @@ module.exports = [{
             const response = await axios.get(videoUrl, { responseType: 'arraybuffer' });
             const buffer = Buffer.from(response.data, 'binary');
 
-            // Send the video
             await conn.sendMessage(from, { video: buffer, caption: 'ඔබ ඉල්ලූ වීඩියෝව.' }, { quoted: m });
 
         } catch (error) {
@@ -62,7 +61,7 @@ module.exports = [{
             sms.reply(from, '*❌ Anti Link* සාර්ථකව *අක්‍රිය* කරන ලදී.', m);
         } else {
             const status = getAntiLink(from) ? 'ක්‍රියාත්මකයි (ON)' : 'අක්‍රියයි (OFF)';
-            sms.reply(from, \`*Anti Link* තත්ත්වය: \${status}\n\nභාවිතය: \${config.PREFIX}antilink [on/off]\`, m);
+            sms.reply(from, `*Anti Link* තත්ත්වය: ${status}\n\nභාවිතය: ${config.PREFIX}antilink [on/off]`, m);
         }
     }
 }, {
@@ -79,13 +78,12 @@ module.exports = [{
             sms.reply(from, '*❌ Anti Bad Words* සාර්ථකව *අක්‍රිය* කරන ලදී.', m);
         } else {
             const status = getAntiBadWords(from) ? 'ක්‍රියාත්මකයි (ON)' : 'අක්‍රියයි (OFF)';
-            sms.reply(from, \`*Anti Bad Words* තත්ත්වය: \${status}\n\nභාවිතය: \${config.PREFIX}antibadwords [on/off]\`, m);
+            sms.reply(from, `*Anti Bad Words* තත්ත්වය: ${status}\n\nභාවිතය: ${config.PREFIX}antibadwords [on/off]`, m);
         }
     }
 }, {
     cmd: ['antidelete'],
     handle: async ({ conn, m, from, sms, args, isOwner, config }) => {
-        // Anti-Delete යනු Bot Ownerට පමණක් පාලනය කළ හැකි ගෝලීය සැකසුමකි.
         if (!isOwner) return sms.reply(from, 'මෙම විධානය භාවිතා කිරීමට Bot Owner බලතල අවශ්‍ය වේ.', m);
 
         if (args[0] === 'on') {
@@ -96,8 +94,7 @@ module.exports = [{
             sms.reply(from, '*❌ Anti Delete* සාර්ථකව *අක්‍රිය* කරන ලදී.', m);
         } else {
             const status = await getAntiDeleteStatus() ? 'ක්‍රියාත්මකයි (ON)' : 'අක්‍රියයි (OFF)';
-            sms.reply(from, \`*Anti Delete* තත්ත්වය: \${status}\n\nභාවිතය: \${config.PREFIX}antidelete [on/off]\`, m);
+            sms.reply(from, `*Anti Delete* තත්ත්වය: ${status}\n\nභාවිතය: ${config.PREFIX}antidelete [on/off]`, m);
         }
     }
 }];
-                    
