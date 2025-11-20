@@ -1,274 +1,366 @@
+// index.js (merged & fixed)
 const {
-default: makeWASocket,
-useMultiFileAuthState,
-DisconnectReason,
-jidNormalizedUser,
-getContentType,
-fetchLatestBaileysVersion,
-Browsers
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  jidNormalizedUser,
+  getContentType,
+  fetchLatestBaileysVersion,
+  Browsers
 } = require('@whiskeysockets/baileys')
 
-const l = console.log
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
-  const { AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage } = require('./SHASHIKA-data')
-const fs = require('fs')
 const P = require('pino')
-const config = require('./config')
 const qrcode = require('qrcode-terminal')
+const fs = require('fs')
 const util = require('util')
-const { sms,downloadMediaMessage,AntiDelete } = require('./lib')
 const axios = require('axios')
 const { File } = require('megajs')
+const express = require('express')
+const app = express()
+const port = process.env.PORT || 8000
 
+const l = console.log
+
+// local helpers / data (adjust paths if your repo differs)
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
+const { saveMessage, loadMessage, setAntiLink, getAntiLink, setAntiBadWords, getAntiBadWords } = require('./lib/SHASHIKA-data')
+const { getAntiDeleteStatus } = require('./lib/database')
+const { sms, downloadMediaMessage } = require('./lib/msg') // adjust if path is ./lib/msg or ./lib/index
+const connectDB = require('./lib/mongodb')
+
+// config + owner
+const config = require('./config')
 const ownerNumber = ['94772469026']
 
-// ✅ Connect MongoDB before anything else
-const connectDB = require('./lib/mongodb');
-connectDB();
+// connect DB first
+connectDB().catch(e => console.log('Mongo connect err:', e))
 
-//===================SESSION-AUTH============================
+// session restore from MEGA if needed
 if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-const sessdata = config.SESSION_ID.replace("suho~", '')
-const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
-filer.download((err, data) => {
-if(err) throw err
-fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
-console.log("Session downloaded ✅")
-})})}
+  if (!config.SESSION_ID) {
+    console.log('Please add your session to SESSION_ID env !!')
+  } else {
+    try {
+      const sessdata = config.SESSION_ID.replace("suho~", '')
+      const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
+      filer.download((err, data) => {
+        if (err) return console.error('Session download error:', err)
+        fs.mkdirSync(__dirname + '/auth_info_baileys/', { recursive: true })
+        fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data)
+        console.log('Session downloaded ✅')
+      })
+    } catch (e) {
+      console.error('Failed to download session:', e)
+    }
+  }
+}
 
-const express = require("express");
-const app = express();
-const port = process.env.PORT || 8000;
-
-//=================== MAIN CONNECT FUNCTION =============================
 async function connectToWA() {
-  // ✅ Load dynamic ENV variables from MongoDB
-  const { readEnv } = require('./lib/database');
-  const dbConfig = await readEnv();
-  const prefix = dbConfig.PREFIX || '.';
-        
-console.log("Connecting wa bot 🧬...");
-const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
-var { version } = await fetchLatestBaileysVersion()
+  try {
+    // load dynamic env from DB (PREFIX, etc.)
+    const { readEnv } = require('./lib/database')
+    const dbConfig = await readEnv().catch(() => ({}))
+    const prefix = (dbConfig && dbConfig.PREFIX) ? dbConfig.PREFIX : (config.PREFIX || '.')
 
-const conn = makeWASocket({
-        logger: P({ level: 'silent' }),
-        printQRInTerminal: false,
-        browser: Browsers.macOS("Firefox"),
-        syncFullHistory: true,
-        auth: state,
-        version
-        })
-    
-conn.ev.on('connection.update', (update) => {
-const { connection, lastDisconnect } = update
-if (connection === 'close') {
-if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
-connectToWA()
-}
-} else if (connection === 'open') {
-console.log('😼 Installing... ')
-const path = require('path');
-fs.readdirSync("./plugins/").forEach((plugin) => {
-if (path.extname(plugin).toLowerCase() == ".js") {
-require("./plugins/" + plugin);
-}
-});
-console.log('Plugins installed successful ✅')
-console.log('Bot connected to whatsapp ✅')
+    console.log('Connecting wa bot 🧬...')
+    const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/auth_info_baileys/')
+    const { version } = await fetchLatestBaileysVersion()
 
-let up = `𝐀𝐆𝐍𝐈 connected successful ✅\n𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧\nPREFIX: ${prefix}`;
+    const conn = makeWASocket({
+      logger: P({ level: 'silent' }),
+      printQRInTerminal: false,
+      browser: Browsers.macOS('Firefox'),
+      syncFullHistory: true,
+      auth: state,
+      version
+    })
 
-conn.sendMessage(ownerNumber + "@s.whatsapp.net", { image: { url: `https://files.catbox.moe/4kux2y.jpg` }, caption: up })
+    // save credentials
+    conn.ev.on('creds.update', saveCreds)
 
-}
-})
-  //============================== 
+    // connection updates
+    conn.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update
+      if (connection === 'close') {
+        const err = lastDisconnect?.error
+        const status = err ? (err.output?.statusCode || null) : null
+        if (status !== DisconnectReason?.loggedOut) {
+          console.log('Connection closed unexpectedly — reconnecting...')
+          setTimeout(connectToWA, 2000)
+        } else {
+          console.log('Logged out. Please remove session files and re-scan QR.')
+        }
+      } else if (connection === 'open') {
+        console.log('Bot connected to WhatsApp ✅')
 
-  conn.ev.on("group-participants.update", (update) => GroupEvents(conn, update));	
+        // load plugins (if your plugins export functions)
+        try {
+          const path = require('path')
+          fs.readdirSync("./plugins/").forEach((pluginFile) => {
+            if (path.extname(pluginFile).toLowerCase() === ".js") {
+              try { require("./plugins/" + pluginFile) } catch (e) { console.error('Plugin load error', pluginFile, e) }
+            }
+          })
+          console.log('Plugins installed successful ✅')
+        } catch (e) {
+          console.error('Plugin loader error:', e)
+        }
 
-	//============= READ STATUS =============
-conn.ev.on('messages.upsert', async(mek) => {
-    mek = mek.messages[0];
-    if (!mek.message) return;
+        // notify owner(s)
+        try {
+          const up = `𝐀𝐆𝐍𝐈 connected successful ✅\n𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐬𝐡𝐚𝐬𝐡𝐢𝐤𝐚 𝐝𝐢𝐥𝐬𝐡𝐚𝐧\nPREFIX: ${prefix}`
+          const ownerJid = ownerNumber.map(n => n + '@s.whatsapp.net')
+          // send to first owner only (avoid array issue)
+          if (ownerJid[0]) {
+            await conn.sendMessage(ownerJid[0], { image: { url: `https://files.catbox.moe/4kux2y.jpg` }, caption: up })
+          }
+        } catch (e) {
+          console.error('Notify owner error:', e)
+        }
+      }
 
-    // Handle ephemeral messages
-    mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
-        ? mek.message.ephemeralMessage.message 
-        : mek.message;
+      if (qr) {
+        qrcode.generate(qr, { small: true })
+        console.log('Scan the QR code to connect')
+      }
+    })
 
-    // ✅ Mark messages as read automatically if enabled in config
-    if (config.READ_MESSAGE === 'true') {
-        await conn.readMessages([mek.key]);  // Mark the message as read
-        console.log(`Marked message from ${mek.key.remoteJid} as read.`);
-    }
+    // group participant updates (placeholder — keep your actual logic)
+    conn.ev.on("group-participants.update", (update) => {
+      try {
+        const GroupEvents = require('./lib/group-events') // or your file
+        if (typeof GroupEvents === 'function') GroupEvents(conn, update)
+      } catch (e) {
+        // ignore if not present
+      }
+    })
 
-    // Handle view once messages
-    if(mek.message.viewOnceMessageV2) {
-        mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
-            ? mek.message.ephemeralMessage.message 
-            : mek.message;
-    }
+    // single, merged messages.upsert handler (all features)
+    conn.ev.on('messages.upsert', async (up) => {
+      try {
+        let mek = up.messages && up.messages[0]
+        if (!mek) return
+        if (!mek.message) return
 
-    // Auto-read WhatsApp status messages if enabled
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true") {
-        await conn.readMessages([mek.key]);
-        console.log(`Auto-read status from ${mek.key.participant}`);
-    }
+        // Unwrap ephemeral messages
+        if (getContentType(mek.message) === 'ephemeralMessage' && mek.message.ephemeralMessage) {
+          mek.message = mek.message.ephemeralMessage.message
+        }
 
-    // Auto-react to status updates if enabled
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true") {
-        const malvinlike = await jidNormalizedUser(conn.user.id);
-        const emojis = ['❤️', '💸', '😇', '🍂', '💥', '💯', '🔥', '💫', '💎', '💗', '🤍', '🖤'];
-        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-        await conn.sendMessage(mek.key.remoteJid, {
-            react: { text: randomEmoji, key: mek.key }
-        }, { statusJidList: [mek.key.participant, malvinlike] });
-    }
+        // ignore status broadcasts optionally (we handle status specially below)
+        if (mek.key && mek.key.remoteJid === 'status@broadcast') {
+          // Auto status features
+          if (config.AUTO_STATUS_SEEN === "true") {
+            await conn.readMessages([mek.key]).catch(()=>{})
+            console.log(`Auto-read status from ${mek.key.participant}`)
+          }
 
-    // Auto-reply to status updates if enabled
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true") {
-        const user = mek.key.participant;
-        const text = `${config.AUTO_STATUS_MSG}`;
-        await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek });
-    }
+          if (config.AUTO_STATUS_REACT === "true") {
+            const malvinlike = await jidNormalizedUser(conn.user.id)
+            const emojis = ['❤️','💸','😇','🍂','💥','💯','🔥','💫','💎','💗','🤍','🖤']
+            const randomEmoji = emojis[Math.floor(Math.random()*emojis.length)]
+            await conn.sendMessage(mek.key.remoteJid, { react: { text: randomEmoji, key: mek.key } }, { statusJidList: [mek.key.participant, malvinlike] }).catch(()=>{})
+          }
 
-    // Save the message to DB
-    await saveMessage(mek);
-});
-conn.ev.on('creds.update', saveCreds)  
+          if (config.AUTO_STATUS_REPLY === "true") {
+            const user = mek.key.participant
+            const text = `${config.AUTO_STATUS_MSG || 'Thanks for the update!'}`
+            await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek }).catch(()=>{})
+          }
 
-conn.ev.on('messages.upsert', async(mek) => {
-mek = mek.messages[0]
-if (!mek.message) return	
-mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-const m = sms(conn, mek)
-const type = getContentType(mek.message)
-const content = JSON.stringify(mek.message)
-const from = mek.key.remoteJid
-const quoted = type == 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo != null ? mek.message.extendedTextMessage.contextInfo.quotedMessage || [] : []
-const body = (type === 'conversation') ? mek.message.conversation : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : (type == 'imageMessage') && mek.message.imageMessage.caption ? mek.message.imageMessage.caption : (type == 'videoMessage') && mek.message.videoMessage.caption ? mek.message.videoMessage.caption : ''
-const isCmd = body.startsWith(prefix)
-const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : ''
-const args = body.trim().split(/ +/).slice(1)
-const q = args.join(' ')
-const isGroup = from.endsWith('@g.us')
-const sender = mek.key.fromMe ? (conn.user.id.split(':')[0]+'@s.whatsapp.net' || conn.user.id) : (mek.key.participant || mek.key.remoteJid)
-const senderNumber = sender.split('@')[0]
-const botNumber = conn.user.id.split(':')[0]
-const pushname = mek.pushName || 'Sin Nombre'
-const isMe = botNumber.includes(senderNumber)
-const isOwner = ownerNumber.includes(senderNumber) || isMe
-const botNumber2 = await jidNormalizedUser(conn.user.id);
-const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
-const groupName = isGroup ? groupMetadata.subject : ''
-const participants = isGroup ? await groupMetadata.participants : ''
-const groupAdmins = isGroup ? await getGroupAdmins(participants) : ''
-const isBotAdmins = isGroup ? groupAdmins.includes(botNumber2) : false
-const isAdmins = isGroup ? groupAdmins.includes(sender) : false
-const isReact = m.message.reactionMessage ? true : false
-const reply = (teks) => {
-conn.sendMessage(from, { text: teks }, { quoted: mek })
-}
+          // don't continue to normal processing for status messages
+          return
+        }
 
-conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
-              let mime = '';
-              let res = await axios.head(url)
-              mime = res.headers['content-type']
-              if (mime.split("/")[1] === "gif") {
-                return conn.sendMessage(jid, { video: await getBuffer(url), caption: caption, gifPlayback: true, ...options }, { quoted: quoted, ...options })
+        // mark read if configured
+        if (config.READ_MESSAGE === 'true') {
+          await conn.readMessages([mek.key]).catch(()=>{})
+        }
+
+        // skip Baileys internal messages
+        if (mek.key.id && mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+
+        // Prepare helpers/flags
+        const m = sms(conn, mek) // your sms wrapper
+        const type = getContentType(mek.message)
+        const from = mek.key.remoteJid
+        const isGroup = from && from.endsWith && from.endsWith('@g.us')
+        const sender = mek.key.fromMe ? (conn.user.id.split(':')[0] + '@s.whatsapp.net') : (mek.key.participant || mek.key.remoteJid)
+        const senderNumber = sender.split('@')[0]
+        const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net'
+        const pushname = mek.pushName || 'No Name'
+        const body = (type === 'conversation') ? mek.message.conversation
+          : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage?.text
+          : (type === 'imageMessage') ? mek.message.imageMessage?.caption
+          : (type === 'videoMessage') ? mek.message.videoMessage?.caption
+          : ''
+
+        const isCmd = typeof body === 'string' && body.startsWith(prefix || config.PREFIX || '.')
+        const command = isCmd ? body.slice((prefix||config.PREFIX||'.').length).trim().split(' ').shift().toLowerCase() : ''
+        const args = body.trim().split(/ +/).slice(1)
+        const q = args.join(' ')
+        const botNumberShort = conn.user.id.split(':')[0]
+        const isOwner = ownerNumber.includes(senderNumber) || botNumberShort.includes(senderNumber)
+
+        // group metadata safe load
+        let groupMetadata = null
+        let groupName = ''
+        let participants = []
+        let groupAdmins = []
+        try {
+          if (isGroup) {
+            groupMetadata = await conn.groupMetadata(from).catch(()=>null)
+            groupName = groupMetadata?.subject || ''
+            participants = groupMetadata?.participants || []
+            groupAdmins = getGroupAdmins(participants)
+          }
+        } catch (e) { /* ignore */ }
+
+        const isBotAdmins = isGroup ? groupAdmins.includes(botNumber) : false
+        const isAdmins = isGroup ? groupAdmins.includes(sender) : false
+        const isReact = m?.message?.reactionMessage ? true : false
+
+        // quick reply helper
+        const reply = (text) => conn.sendMessage(from, { text }, { quoted: mek }).catch(()=>{})
+
+        // Auto-react (public)
+        if (!isReact && config.AUTO_REACT === 'true') {
+          const reactions = ['🌼','❤️','💐','🔥','🏵️','❄️','🧊','🐳','💥','🥀','❤‍🔥','🥹','😩','🫣','🤭','👻','👾','🫶','😻']
+          const randomReaction = reactions[Math.floor(Math.random()*reactions.length)]
+          try { await conn.sendMessage(from, { react: { text: randomReaction, key: mek.key } }) } catch (e) {}
+        }
+
+        // MODE gates (private/inbox/groups)
+        if (!isOwner && config.MODE === "private") return
+        if (!isOwner && isGroup && config.MODE === "inbox") return
+        if (!isOwner && !isGroup && config.MODE === "groups") return
+
+        // ================= ANTI-LINK =================
+        if (isGroup && getAntiLink(from) && !isAdmins) {
+          const containsLink = isUrl(body || '')
+          if (containsLink) {
+            await conn.sendMessage(from, { text: `*⚠️ ලින්ක් තහනම් ක්‍රියාත්මකයි!* \n@${senderNumber}, ඔබට මෙහි links යැවීමට අවසර නැත.`, mentions: [sender] }).catch(()=>{})
+            if (isBotAdmins) {
+              await conn.groupParticipantsUpdate(from, [sender], 'remove').catch(()=>{})
+            } else {
+              await conn.sendMessage(from, { text: `*⚠️ Anti Link:* මට admin බලතල නැති නිසා @${senderNumber} ඉවත් කිරීමට නොහැක.`, mentions: [sender] }).catch(()=>{})
+            }
+            return
+          }
+        }
+
+        // ================= ANTI-BAD-WORDS =================
+        if (isGroup && getAntiBadWords(from) && !isAdmins) {
+          const badWords = ['fuck','shit','piss','asshole','bitch','motherfucker','cunt','dick','pussy','මගුල','හුත්ත','පක','වේසි','ගොන්','බල්ලා','කැරි','හුකන']
+          const messageText = (body || '').toLowerCase()
+          const found = badWords.some(w => messageText.includes(w))
+          if (found) {
+            await conn.sendMessage(from, { text: `*🚫 අසභ්‍ය වචන තහනම් ක්‍රියාත්මකයි!* \n@${senderNumber}, අසභ්‍ය වචන භාවිතයෙන් වළකින්න.`, mentions: [sender] }).catch(()=>{})
+            if (isBotAdmins) {
+              // try to delete the message
+              await conn.sendMessage(from, { delete: mek.key }).catch(()=>{})
+            }
+            return
+          }
+        }
+
+        // ================= COMMAND HANDLER =================
+        try {
+          const events = require('./command')
+          const cmdName = isCmd ? body.slice((prefix||config.PREFIX||'.').length).trim().split(" ")[0].toLowerCase() : false
+          if (isCmd && events && events.commands) {
+            const cmd = events.commands.find(c => c.pattern === cmdName) || events.commands.find(c => c.alias && c.alias.includes(cmdName))
+            if (cmd) {
+              if (cmd.react) {
+                conn.sendMessage(from, { react: { text: cmd.react, key: mek.key } }).catch(()=>{})
               }
-              let type = mime.split("/")[0] + "Message"
-              if (mime === "application/pdf") {
-                return conn.sendMessage(jid, { document: await getBuffer(url), mimetype: 'application/pdf', caption: caption, ...options }, { quoted: quoted, ...options })
-              }
-              if (mime.split("/")[0] === "image") {
-                return conn.sendMessage(jid, { image: await getBuffer(url), caption: caption, ...options }, { quoted: quoted, ...options })
-              }
-              if (mime.split("/")[0] === "video") {
-                return conn.sendMessage(jid, { video: await getBuffer(url), caption: caption, mimetype: 'video/mp4', ...options }, { quoted: quoted, ...options })
-              }
-              if (mime.split("/")[0] === "audio") {
-                return conn.sendMessage(jid, { audio: await getBuffer(url), caption: caption, mimetype: 'audio/mpeg', ...options }, { quoted: quoted, ...options })
+              try {
+                cmd.function(conn, mek, m, { from, quoted: mek.message.extendedTextMessage?.contextInfo?.quotedMessage, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber, pushname, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+              } catch (e) {
+                console.error('[PLUGIN ERROR]', e)
               }
             }
+          }
 
-//if(senderNumber.includes("94772469026")){
-//if(isReact) return
-//m.react("😊")
-//}
-  //==========public react============//
-  
-// Auto React for all messages (public and owner)
-if (!isReact && config.AUTO_REACT === 'true') {
-    const reactions = [
-        '🌼', '❤️', '💐', '🔥', '🏵️', '❄️', '🧊', '🐳', '💥', '🥀', '❤‍🔥', '🥹', '😩', '🫣', 
-        '🤭', '👻', '👾', '🫶', '😻', '🙌', '🫂', '🫀', '👩‍🦰', '🧑‍🦰', '👩‍⚕️', '🧑‍⚕️', '🧕', 
-        '👩‍🏫', '👨‍💻', '👰‍♀', '🦹🏻‍♀️', '🧟‍♀️', '🧟', '🧞‍♀️', '🧞', '🙅‍♀️', '💁‍♂️', '💁‍♀️', '🙆‍♀️', 
-        '🙋‍♀️', '🤷', '🤷‍♀️', '🤦', '🤦‍♀️', '💇‍♀️', '💇', '💃', '🚶‍♀️', '🚶', '🧶', '🧤', '👑', 
-        '💍', '👝', '💼', '🎒', '🥽', '🐻', '🐼', '🐭', '🐣', '🪿', '🦆', '🦊', '🦋', '🦄', 
-        '🪼', '🐋', '🐳', '🦈', '🐍', '🕊️', '🦦', '🦚', '🌱', '🍃', '🎍', '🌿', '☘️', '🍀', 
-        '🍁', '🪺', '🍄', '🍄‍🟫', '🪸', '🪨', '🌺', '🪷', '🪻', '🥀', '🌹', '🌷', '💐', '🌾', 
-        '🌸', '🌼', '🌻', '🌝', '🌚', '🌕', '🌎', '💫', '🔥', '☃️', '❄️', '🌨️', '🫧', '🍟', 
-        '🍫', '🧃', '🧊', '🪀', '🤿', '🏆', '🥇', '🥈', '🥉', '🎗️', '🤹', '🤹‍♀️', '🎧', '🎤', 
-        '🥁', '🧩', '🎯', '🚀', '🚁', '🗿', '🎙️', '⌛', '⏳', '💸', '💎', '⚙️', '⛓️', '🔪', 
-        '🧸', '🎀', '🪄', '🎈', '🎁', '🎉', '🏮', '🪩', '📩', '💌', '📤', '📦', '📊', '📈', 
-        '📑', '📉', '📂', '🔖', '🧷', '📌', '📝', '🔏', '🔐', '🩷', '❤️', '🧡', '💛', '💚', 
-        '🩵', '💙', '💜', '🖤', '🩶', '🤍', '🤎', '❤‍🔥', '❤‍🩹', '💗', '💖', '💘', '💝', '❌', 
-        '✅', '🔰', '〽️', '🌐', '🌀', '⤴️', '⤵️', '🔴', '🟢', '🟡', '🟠', '🔵', '🟣', '⚫', 
-        '⚪', '🟤', '🔇', '🔊', '📢', '🔕', '♥️', '🕐', '🚩', '🇵🇰'
-    ];
+          // body / text / image / sticker event mapping
+          if (events && events.commands && Array.isArray(events.commands)) {
+            events.commands.map(async (command) => {
+              try {
+                if (body && command.on === "body") {
+                  command.function(conn, mek, m, { from, l, quoted: mek.message.extendedTextMessage?.contextInfo?.quotedMessage, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber, pushname, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+                } else if (mek.message && command.on === "text" && (type === 'conversation' || type === 'extendedTextMessage')) {
+                  command.function(conn, mek, m, { from, l, quoted: mek.message.extendedTextMessage?.contextInfo?.quotedMessage, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber, pushname, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+                } else if ((command.on === "image" || command.on === "photo") && type === "imageMessage") {
+                  command.function(conn, mek, m, { from, l, quoted: mek.message.extendedTextMessage?.contextInfo?.quotedMessage, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber, pushname, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+                } else if (command.on === "sticker" && type === "stickerMessage") {
+                  command.function(conn, mek, m, { from, l, quoted: mek.message.extendedTextMessage?.contextInfo?.quotedMessage, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber, pushname, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+                }
+              } catch (e) {
+                // plugin errors won't break loop
+              }
+            })
+          }
+        } catch (e) {
+          // ignore command loader errors
+        }
 
-    const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
-    m.react(randomReaction);
-		}
-//=======================work type =============================================================================
-if(!isOwner && config.MODE === "private") return
-if(!isOwner && isGroup && config.MODE === "inbox") return
-if(!isOwner && !isGroup && config.MODE === "groups") return
-//==========================
-    
-const events = require('./command')
-const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
-if (isCmd) {
-const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
-if (cmd) {
-if (cmd.react) conn.sendMessage(from, { react: { text: cmd.react, key: mek.key }})
+        // Save message for anti-delete
+        try { await saveMessage(mek).catch(()=>{}) } catch (e) {}
 
-try {
-cmd.function(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply});
-} catch (e) {
-console.error("[PLUGIN ERROR] " + e);
-}
-}
-}
-events.commands.map(async(command) => {
-if (body && command.on === "body") {
-command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-} else if (mek.q && command.on === "text") {
-command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-} else if (
-(command.on === "image" || command.on === "photo") &&
-mek.type === "imageMessage"
-) {
-command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-} else if (
-command.on === "sticker" &&
-mek.type === "stickerMessage"
-) {
-command.function(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply})
-}});
-//============================================================================ 
+      } catch (e) {
+        console.error('messages.upsert error:', e)
+      }
+    })
 
-})
+    // anti-delete listener
+    conn.ev.on('messages.delete', async (del) => {
+      try {
+        if (!del || !del.key) return
+        if (del.key.remoteJid === 'status@broadcast') return
+
+        const isAntiDeleteEnabled = await getAntiDeleteStatus().catch(()=>false)
+        if (!isAntiDeleteEnabled) return
+
+        const from = del.key.remoteJid
+        const saved = await loadMessage(del.key.id) // your loader should return the saved message object
+        if (!saved) return
+
+        const sender = saved.key.fromMe ? (conn.user.id.split(':')[0] + '@s.whatsapp.net') : (saved.key.participant || saved.key.remoteJid)
+        const body = (saved.message?.conversation) ? saved.message.conversation : (saved.message?.extendedTextMessage) ? saved.message.extendedTextMessage.text : 'Media/Other Message Type'
+        const isGroup = from.endsWith('@g.us')
+        let groupMetadata = null
+        if (isGroup) groupMetadata = await conn.groupMetadata(from).catch(()=>null)
+
+        // check if sender is group admin — if so, ignore
+        if (isGroup) {
+          const groupAdmins = getGroupAdmins(groupMetadata?.participants || [])
+          if (groupAdmins.includes(sender)) return
+        }
+
+        const teks = `
+*--- ❌ පණිවිඩයක් මකා දමා ඇත (Anti Delete) ❌ ---*
+*යවන්නා (Sender):* @${sender.split('@')[0]}
+*චැට් එක (Chat):* ${isGroup ? (groupMetadata?.subject || 'Group') : 'Private Chat'}
+*මකා දැමූ පණිවිඩය (Deleted Message):*
+\`\`\`
+${body}
+\`\`\`
+`
+        conn.sendMessage(from, { text: teks, mentions: [sender] }).catch(()=>{})
+
+      } catch (e) {
+        console.error('messages.delete handler error:', e)
+      }
+    })
+
+    // basic keepalive web server
+    app.get('/', (req, res) => res.send('Bot is running!'))
+    app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`))
+
+  } catch (e) {
+    console.error('connectToWA error:', e)
+    setTimeout(connectToWA, 5000)
+  }
 }
-app.get("/", (req, res) => {
-res.send("hey, bot started✅");
-});
-app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
-setTimeout(() => {
+
 connectToWA()
-}, 4000);  
-
